@@ -3,6 +3,7 @@ using SpikeSorter
 using PlexonTools
 using FileIO
 using MAT
+using DataFrames
 
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`. 
