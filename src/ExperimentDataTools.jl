@@ -89,12 +89,12 @@ function get_session_spiketimes(unit_name::String, unit_data::Dict, cwd=pwd())
             mkdir(dirn)
         end
         fn = joinpath(sn,chn,cn,"unit.mat")
-        MAT.matwrite(fn, Dict("timestamps" => timestamps,
+        MAT.matwrite(fn, Dict("timestamps" => timestamps*sampling_rate,
                               "waveform" => waveform,
                               "sampling_rate" => sampling_rate))
     end
 end
-    
+
 """
 Transfer data from `src` to `dest`
 """
