@@ -61,7 +61,7 @@ end
 
 function get_session_spiketimes(ff::File{format"MAT"}, cwd=pwd())
     data = matread(ff.filename)
-    get_session_spiketimes(data)
+    get_session_spiketimes(ff.filename, data)
 end
 
 function get_session_spiketimes(unit_name::String, unit_data::Dict, cwd=pwd())
