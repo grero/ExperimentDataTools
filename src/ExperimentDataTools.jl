@@ -51,26 +51,30 @@ end
 
 function get_session_spiketimes(ff::File{format"MAT"}, cwd=pwd())
     data = matread(ff.filename)
-    waveform = data["waveform"]
-    spikeidx = data["timestamps"]
-    sampling_rate = data["sampling_rate"]
+    get_session_spiketimes(data)
+end
+
+function get_session_spiketimes(unit_name::String, unit_data::Dict, cwd=pwd())
+    waveform = unit_data["waveform"]
+    spikeidx = unit_data["timestamps"]
+    sampling_rate = unit_data["sampling_rate"]
     markers, marker_timestamps = get_session_markers()
-    session_timestamps = get_session_spiketimes(spikeidx./sampling_rate, markers, marker_timestamps) 
+    session_timestamps = get_session_spiketimes(spikeidx./sampling_rate, markers, marker_timestamps)
     for (session,timestamps) in session_timestamps
         sn = @sprintf "session%02d" session
         if !isdir(sn)
             mkdir(sn)
         end
-        mm = match(r"g([0-9]*)c([0-9]*)", ff.filename)
+        mm = match(r"g([0-9]*)c([0-9]*)", unit_name)
         channel = parse(Int64,mm[1])
         cell = parse(Int64, mm[2])
         chn = @sprintf "channel%03d" channel
-        dirn = joinpath(sn,chn) 
+        dirn = joinpath(sn,chn)
         if !isdir(dirn)
             mkdir(dirn)
         end
         cn = @sprintf("cell%02d", cell)
-        dirn = joinpath(sn,chn, cn) 
+        dirn = joinpath(sn,chn, cn)
         if !isdir(dirn)
             mkdir(dirn)
         end
