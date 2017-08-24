@@ -16,31 +16,41 @@ function get_session_spiketimes(spiketimes::Array{Float64,1}, session_markers::D
     session_timestamps = Dict{Int64, Array{Float64,1}}()
     for k in keys(session_markers)
         session_timestamps[k] = filter(t->session_marker_timestamps[k][1] < t < session_marker_timestamps[k][end], spiketimes) - session_marker_timestamps[k][1]
-    end 
+    end
     session_timestamps
 end
 
 function get_session_markers()
-    pl2_file = split(readchomp(`find . -name "*.pl2"`))
-    if isempty(pl2_file)
-        throw(ArgumentError("No pl2 file found"))
+    if isfile("event_markers.txt")
+        dframe = readtable("event_markers.txt";eltypes=[String, Float64])
+        markers = [string(m) for m in dframe[:markers]]
+        return get_session_markers(markers, dframe[:timestamps])
+    else
+        pl2_file = split(readchomp(`find . -name "*.pl2"`))
+        if isempty(pl2_file)
+            throw(ArgumentError("No pl2 file found"))
+        end
+        return get_session_markers(convert(String,first(pl2_file)))
     end
-    get_session_markers(convert(String,first(pl2_file)))
 end
 
 function get_session_markers(pl2_file::String)
     markers, marker_timestamps = PlexonTools.extract_markers(pl2_file)
+    get_session_markers(markers, marker_timestamps)
+end
+
+function get_session_markers(markers, marker_timestamps)
     session_markers = Dict{Int64, Array{String,1}}()
     session_marker_timestamps = Dict{Int64, Array{Float64,1}}()
     #FIXME: This is a complete hack. Figure out why we sometimes get 11111111 strobes
     sidx = find(m->m[1:3] == "110", markers)
     #END FIXME
-    push!(sidx, length(markers))
+    push!(sidx, length(markers)+1)
     for i in 1:length(sidx)-1
         k = parse(Int64,markers[sidx[i]][3:end],2)
         session_markers[k] = markers[sidx[i]:sidx[i+1]-1]
         session_marker_timestamps[k] = marker_timestamps[sidx[i]:sidx[i+1]-1]
-    end 
+    end
     session_markers, session_marker_timestamps
 end
 
