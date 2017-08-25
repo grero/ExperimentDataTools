@@ -1,6 +1,5 @@
 module ExperimentDataTools
 using SpikeSorter
-using PlexonTools
 using FileIO
 using MAT
 using DataFrames
@@ -22,17 +21,9 @@ function get_session_spiketimes(spiketimes::Array{Float64,1}, session_markers::D
 end
 
 function get_session_markers()
-    if isfile("event_markers.txt")
-        dframe = readtable("event_markers.txt";eltypes=[String, Float64])
-        markers = [string(m) for m in dframe[:markers]]
-        return get_session_markers(markers, dframe[:timestamps])
-    else
-        pl2_file = split(readchomp(`find . -name "*.pl2"`))
-        if isempty(pl2_file)
-            throw(ArgumentError("No pl2 file found"))
-        end
-        return get_session_markers(convert(String,first(pl2_file)))
-    end
+    dframe = readtable("event_markers.txt";eltypes=[String, Float64])
+    markers = [string(m) for m in dframe[:markers]]
+    return get_session_markers(markers, dframe[:timestamps])
 end
 
 function get_session_markers(pl2_file::String)
