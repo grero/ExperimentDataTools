@@ -76,7 +76,7 @@ function get_session_spiketimes(unit_name::String, unit_data::Dict, cwd=pwd())
         if !isdir(dirn)
             mkpath(dirn)
         end
-        fn = joinpath(sn,chn,cn,"unit.mat")
+        fn = joinpath(sn,an,chn,cn,"unit.mat")
         MAT.matwrite(fn, Dict("timestamps" => timestamps*sampling_rate,
                               "waveform" => waveform,
                               "sampling_rate" => sampling_rate))
