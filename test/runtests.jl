@@ -31,7 +31,7 @@ writetable("event_markers.txt", dframe)
 for (k,v) in data
     ExperimentDataTools.get_session_spiketimes(k,v)
 end
-new_data = MAT.matread("session01/channel003/cell01/unit.mat")
+new_data = MAT.matread("session01/array01/channel003/cell01/unit.mat")
 sm,st = ExperimentDataTools.get_session_markers()
 
 cd(cwd)
