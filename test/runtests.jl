@@ -2,6 +2,7 @@ using ExperimentDataTools
 using Distributions
 using DataFrames
 using MAT
+using DSP
 using Base.Test
 
 function create_data()
@@ -40,3 +41,28 @@ cd(cwd)
 t1 = filter(t->t/40000.0>=session_timestamps[1], data["g003c01_spiketrains.mat"]["timestamps"])
 t2 = new_data["timestamps"] + session_timestamps[1]*40_000
 @test t1 ≈ t2
+
+function test_highpass()
+    cwd = pwd()
+    dd = tempdir()
+    cd(dd)
+    srand(1234)
+    X = zeros(100_000);
+    for i in 2:length(X)
+        X[i] = X[i-1] + randn()
+    end
+    H = HighpassData(X, 1, 40_000.0, 300.0, Butterworth, 4)
+    ExperimentDataTools.save_data(H, "session01")
+    H2 = ExperimentDataTools.load_data(ExperimentDataTools.HighpassData, "session01/array01/channel001/highpassdata.mat")
+    @test H.channel == H2.channel
+    @test H.sampling_rate ≈ H2.sampling_rate
+    @test H.cutoff ≈ H2.cutoff
+    @test H.data ≈ H2.data
+    @test H.filter_name == H2.filter_name
+    @test H.filter_coefs.p ≈ H2.filter_coefs.p
+    @test H.filter_coefs.k ≈ H2.filter_coefs.k
+    @test H.filter_coefs.z ≈ H2.filter_coefs.z
+    cd(cwd)
+end
+
+test_highpass()

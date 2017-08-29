@@ -1,0 +1,8 @@
+language: julia
+julia:
+      - release
+      - nightly
+before_script:
+  - julia -e 'Pkg.clone("https://github.com/grero/Entropies.jl.git")'
+after_success:
+      - julia -e 'cd(Pkg.dir("DirectedInformation")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'

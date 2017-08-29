@@ -3,9 +3,14 @@ using SpikeSorter
 using FileIO
 using MAT
 using DataFrames
+using DSP
+
+include("types.jl")
+
+export HighpassData
 
 """
-Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`. 
+Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
 """
 function get_session_spiketimes(wf::SpikeWaveforms, session_markers::Dict, session_marker_timestamps::Dict)
     get_session_spiketimes(wf.timestamps, session_markers,session_marker_timestamps)
@@ -97,6 +102,15 @@ function get_data(src::String,dest=pwd())
     for f in edf_files
         #transfer
     end
+end
+
+function HighpassData(X::Array{Float64,1}, channel::Int64, sampling_rate::Float64, cutoff::Float64=300.0, filter_method=Butterworth, filter_order=4)
+    ff = digitalfilter(Highpass(cutoff;fs=sampling_rate),filter_method(filter_order))
+    Y = filtfilt(ff, X)
+    #clunky way of getting the filter name
+    filter_name = convert(String, split(string(filter_method), ".")[end])
+    filter_name = "$(filter_name)($(filter_order))"
+    HighpassData(Y, channel, sampling_rate, ff, filter_name, cutoff)
 end
 
 end#module
