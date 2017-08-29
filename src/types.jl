@@ -9,6 +9,15 @@ mutable struct HighpassData{T1<:Real, T2<:Real,T3<:Real} <: RawData
     cutoff::T3
 end
 
+HighpassData{T2<:Real, T3<:Real}(sampling_rate::T2, filter_coefs::FilterCoefficients, filter_name::String, cutoff::T3) = HighpassData(Float64[], 0, sampling_rate, filter_coefs, filter_name, cutoff)
+
+function HighpassData{T2<:Real}(sampling_rate::T2, cutoff::Real,filter_method::Function, filter_order::Int64)
+    filter_coefs = digitalfilter(Highpass(cutoff;fs=sampling_rate),filter_method(filter_order))
+    filter_name = convert(String, split(string(filter_method), ".")[end])
+    filter_name = "$(filter_name)($(filter_order))"
+    HighpassData(sampling_rate, filter_coefs, filter_name, cutoff)
+end
+
 function save_data(X::HighpassData, session::String)
     _array = div(X.channel,32) + 1
     ch = X.channel - (_array-1)*32

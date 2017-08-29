@@ -113,4 +113,10 @@ function HighpassData(X::Array{Float64,1}, channel::Int64, sampling_rate::Float6
     HighpassData(Y, channel, sampling_rate, ff, filter_name, cutoff)
 end
 
+function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
+    H.data = filtfilt(H.filter_coefs, data)
+    H.channel = channel
+    nothing
+end
+
 end#module
