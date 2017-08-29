@@ -27,9 +27,13 @@ function get_session_spiketimes(spiketimes::Array{Float64,1}, session_markers::D
 end
 
 function get_session_markers()
+    return get_session_markers(get_markers()...)
+end
+
+function get_markers()
     dframe = readtable("event_markers.txt";eltypes=[String, Float64])
     markers = [string(m) for m in dframe[:markers]]
-    return get_session_markers(markers, dframe[:timestamps])
+    return markers, Array(dframe[:timestamps])
 end
 
 function get_session_markers(pl2_file::String)
