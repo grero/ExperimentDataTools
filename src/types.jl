@@ -35,12 +35,12 @@ function save_data(X::HighpassData, session::String)
             mat_dict[string(k)] = getfield(X, k)
         end
     end
-    MAT.matwrite(fname, Dict("data" => mat_dict))
+    MAT.matwrite(fname, Dict("highpassdata" => Dict("data" => mat_dict)))
 end
 
 function load_data(::Type{HighpassData}, fname::String)
     mat_dict = MAT.matread(fname)
-    _data = mat_dict["data"]
+    _data = mat_dict["highpassdata"]["data"]
     fn = _data["filter_name"]
     bb = _data["filter_coefs"]
     ff = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
