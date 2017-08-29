@@ -6,6 +6,7 @@ using DataFrames
 using DSP
 
 include("types.jl")
+include("sessions.jl")
 
 export HighpassData
 
