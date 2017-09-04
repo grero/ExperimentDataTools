@@ -65,4 +65,26 @@ function test_highpass()
     cd(cwd)
 end
 
+function test_reorganising_sessions()
+    cwd = pwd()
+    dd = tempdir()
+    cd(dd)
+    repo_path = "test"
+    repo = LibGit2.init(repo_path)
+    files = ["w7_11_1.edf", "w7_11_1_settings.txt", "w7_11_1_results.txt"]
+    for f in files
+        touch("$(repo_path)/$f")
+        LibGit2.add!(repo, f)
+    end
+    LibGit2.commit(repo, "Adds files")
+    cd(repo_path)
+    ExperimentDataTools.process(;commit_message="Cleanup") 
+    for f in files
+        nf = "session01/$f"
+        @test isfile(nf)
+    end
+    cd(cwd)
+end
+
 test_highpass()
+test_reorganising_sessions()

@@ -52,13 +52,13 @@ Re-organize the current directory by moving session related files to their dedic
 w7_11_1.edf -> session01/w7_11_1.edf
 If files are under revision control, use git mv instead and opens the default editor asking for a commit message.
 """
-function process()
+function process(;commit_message="")
     repo = discover_repo(pwd())
     repo_path = LibGit2.path(repo)*"/"
     files = split(chomp(readstring(`find . -name "*_settings.txt"`)))
     index_updated = false
     for f in files
-        mm = match(r"([a-zA-Z]*)([0-9])_([0-9])_([0-9])",f)
+        mm = match(r"([a-zA-Z]*)([0-9]*)_([0-9]*)_([0-9]*)",f)
         animal,month,day,session = mm.captures
         session = parse(Int64,session)
         # find all files belonging to this session
@@ -82,6 +82,6 @@ function process()
         end
     end
     if index_updated
-        run(`git commit`)
+        run(`git commit -m $(commit_message)`)
     end
 end
