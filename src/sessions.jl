@@ -55,14 +55,14 @@ If files are under revision control, use git mv instead and opens the default ed
 function process(;commit_message="")
     repo = discover_repo(pwd())
     repo_path = LibGit2.path(repo)*"/"
-    files = split(chomp(readstring(`find . -name "*_settings.txt"`)))
+    files = split(chomp(readstring(`find . -name "*_settings.txt" -maxdepth 1`)))
     index_updated = false
     for f in files
         mm = match(r"([a-zA-Z]*)([0-9]*)_([0-9]*)_([0-9]*)",f)
         animal,month,day,session = mm.captures
         session = parse(Int64,session)
         # find all files belonging to this session
-        sfiles = split(chomp(readstring(`find $(pwd()) -name "$(animal)$(month)_$(day)_$(session)*"`)))
+        sfiles = split(chomp(readstring(`find $(pwd()) -name "$(animal)$(month)_$(day)_$(session)*" -maxdepth 1`)))
         session_name = @sprintf "session%02d" session
         mkpath(session_name)
         for sf in sfiles
@@ -82,6 +82,10 @@ function process(;commit_message="")
         end
     end
     if index_updated
-        run(`git commit -m $(commit_message)`)
+        if !isempty(commit_message)
+            run(`git commit -m $(commit_message)`)
+        else
+            run(`git commit`)
+        end
     end
 end
