@@ -1,3 +1,5 @@
+using JSON
+using PyPlot
 fig_save_path = "/Users/roger/Documents/research/monkey/training"
 
 function plot_saccade_endpoints(eyetrials::Vector{Stimulus.NewEyelinkTrial}, screen_width=1920.0, screen_height=1200.0)
