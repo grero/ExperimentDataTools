@@ -1,9 +1,15 @@
 module ExperimentDataTools
+using ProgressMeter
 using SpikeSorter
+using Stimulus
 using FileIO
 using MAT
 using DataFrames
 using DSP
+using LFPTools
+using RippleTools
+using DataFrames
+using MAT
 
 include("types.jl")
 include("sessions.jl")
@@ -122,6 +128,56 @@ function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
     H.data = filtfilt(H.filter_coefs, data)
     H.channel = channel
     nothing
+end
+
+function process_rawdata2(rfile::File{format"NSHR"},channels=1:128,fs=30_000)
+    #extract triggers
+    dd, bn = splitdir(rfile.filename)
+    if isempty(dd)
+        dd = "."
+    end
+    marker_file = "$(dd)/event_markers.csv"
+    if isfile(marker_file)
+        _ddf = readtable(marker_file;eltypes=[String, Float64])
+        words = Array(_ddf[:words])
+        timestamps = Array(_ddf[:timestamps])
+    else
+        strobes, timestamps = RippleTools.extract_markers(rfile.filename)
+        words = RippleTools.parse_strobe.(strobes)
+        writetable(marker_file, DataFrame(words=words, timestamps=timestamps))
+    end
+    #parse trials
+    trials = parse(Stimulus.NewTrial, words, timestamps)
+    ctrials = Stimulus.getTrialType(trials, :reward_on)
+    ttime = [round(Int64, (trial.trial_start + trial.fix_start)*fs) for trial in ctrials]
+    process_rawdata(rfile, channels, ttime, fs)
+end
+
+function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
+    _dd, bn = splitdir(rfile.filename)
+    if isempty(_dd)
+        _dd = "."
+    end
+    session_name, ~ = splitext(bn)
+    println("Processing data...")
+    open(rfile.filename, "r") do ff
+        dd = RippleTools.DataPacket(ff)
+        @showprogress 1 "Processing channels... " for ch in channels
+            filepath = "$(getpath(".", ch))/$(filename(LowpassData))"
+            if isfile(filepath)
+                continue
+            end
+            data,ff = LFPTools.lowpass_filter(float(dd.data[ch,:]),0.1, 250.0,fs)
+            ldata = LowpassData(data, ch, 1000.0, ff, "Butterworth", 4, 0.1, 250.0)
+            save_data(ldata, ".")
+            #ttime_s = div.(ttime, div(fs,1000))
+            #X, x = LFPTools.align_lfp(data, ttime_s)
+            #MAT.matwrite("aligned_LFP_channel_$(channel).mat", Dict("data" => X, "time", x))
+            #fig = plot_lfp(Xβ, Xγ,x)
+            #fig[:savefig]("/Users/roger/Documents/research/monkey/training/Wiesel/$(session_name)_channel_$(ch)_lfp_data.pdf")
+            #plt[:close](fig)
+        end
+    end
 end
 
 end#module
