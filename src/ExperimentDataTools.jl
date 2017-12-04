@@ -10,6 +10,7 @@ using LFPTools
 using RippleTools
 using DataFrames
 using MAT
+import Base.parse
 
 include("types.jl")
 include("sessions.jl")
@@ -130,7 +131,7 @@ function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
     nothing
 end
 
-function process_rawdata2(rfile::File{format"NSHR"},channels=1:128,fs=30_000)
+function get_triggers(rfile::File{format"NSHR"})
     #extract triggers
     dd, bn = splitdir(rfile.filename)
     if isempty(dd)
@@ -146,11 +147,13 @@ function process_rawdata2(rfile::File{format"NSHR"},channels=1:128,fs=30_000)
         words = RippleTools.parse_strobe.(strobes)
         writetable(marker_file, DataFrame(words=words, timestamps=timestamps))
     end
-    #parse trials
+    words, timestamps
+end
+
+function Base.parse(::Type{Stimulus.NewTrial}, rfile::File{format"NSHR"})
+    words, timestamps = get_triggers(rfile)
     trials = parse(Stimulus.NewTrial, words, timestamps)
-    ctrials = Stimulus.getTrialType(trials, :reward_on)
-    ttime = [round(Int64, (trial.trial_start + trial.fix_start)*fs) for trial in ctrials]
-    process_rawdata(rfile, channels, ttime, fs)
+    trials
 end
 
 function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
