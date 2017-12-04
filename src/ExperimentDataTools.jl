@@ -15,7 +15,7 @@ import Base.parse
 include("types.jl")
 include("sessions.jl")
 
-export HighpassData
+export HighpassData, LowpassData
 
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
