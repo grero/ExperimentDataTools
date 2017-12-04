@@ -14,6 +14,7 @@ end
 filename(X::HighpassData) = "highpass.mat"
 filename(::Type{HighpassData}) = "highpass.mat"
 matname(X::HighpassData) = "highpassdata"
+matname(::Type{HighpassData}) = "highpassdata"
 
 HighpassData{T2<:Real, T3<:Real}(sampling_rate::T2, filter_coefs::FilterCoefficients, filter_name::String, cutoff::T3) = HighpassData(Float64[], 0, sampling_rate, filter_coefs, filter_name, cutoff)
 
@@ -38,6 +39,7 @@ end
 filename(X::LowpassData) = "lowpass.mat"
 filename(::Type{LowpassData}) = "lowpass.mat"
 matname(X::LowpassData) = "lowpassdata"
+matname(X::Type{LowpassData}) = "lowpassdata"
 
 function getpath(session::String, channel::Int) 
     _array = div(channel,32) + 1
