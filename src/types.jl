@@ -1,5 +1,7 @@
 abstract type RawData end
 
+import Base.zero
+
 mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
     data::Array{T1,1}
     channel::Int64
@@ -35,6 +37,12 @@ mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
     low_freq::Float64
     high_freq::Float64
 end
+
+function zero(::Type{LowpassData{T1, T2}}) where T1 <: Real where T2 <: Real
+    LowpassData(T1[], 0, zero(T2), ZeroPoleGain([0.0], [0.0], 0.0),"", 0, 0.0, 0.0)
+end
+
+zero(::Type{LowpassData}) = zero(LowpassData{Float64, Float64})
 
 filename(X::LowpassData) = "lowpass.mat"
 filename(::Type{LowpassData}) = "lowpass.mat"
@@ -74,4 +82,12 @@ function load_data(::Type{T}, fname::String) where T <: RawData
     ff = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
     T(_data["data"], _data["channel"], _data["sampling_rate"],
                  ff, fn,fo, _data["low_freq"], _data["high_freq"])
+end
+
+function LowpassData()
+    fname = filename(LowpassData)
+    if isfile(fname)
+        return load_data(LowpassData, fname)
+    end
+    return zero(LowpassData)
 end
