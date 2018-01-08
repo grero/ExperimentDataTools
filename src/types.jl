@@ -48,6 +48,18 @@ filename(X::LowpassData) = "lowpass.mat"
 filename(::Type{LowpassData}) = "lowpass.mat"
 matname(X::LowpassData) = "lowpassdata"
 matname(X::Type{LowpassData}) = "lowpassdata"
+level(::Type{LowpassData}) = "channel"
+
+function level(cwd::String)
+    numbers = map(x->first(string(x)), 0:9)
+    dd = last(splitdir(cwd))
+    ss = rstrip(dd, numbers)
+    if isempty(ss)
+        # only numbers; assume this is a date
+        return "day"
+    end
+    return ss
+end
 
 function getpath(session::String, channel::Int) 
     _array = div(channel,32) + 1

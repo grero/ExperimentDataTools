@@ -17,6 +17,8 @@ include("sessions.jl")
 
 export HighpassData, LowpassData
 
+const levels = ["days", "day", "session", "array", "channel", "cell"]
+
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
 """
@@ -181,6 +183,32 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
             #plt[:close](fig)
         end
     end
+end
+
+"""
+Process the current directory, looking for data of type `T`.
+"""
+function process_dir(::Type{T}, dir=pwd();redo=false, save=true) where T <: Any
+    cd(dir) do
+    end
+end
+
+function process_level(::Type{T}, dir=pwd();kvs...) where T <: Any
+    target_level = level(T)
+    process_level(target_level, dir;kvs...)
+end
+
+function process_level(target_level::String, dir=pwd();kvs...)
+    # get the current level
+    this_level = level(dir)
+    this_idx = findfirst(l->this_level==l, levels)
+    target_idx = findfirst(l->target_level==l, levels)
+    for lidx in [this_idx, target_idx]
+        if !(0 < lidx <= length(levels))
+            throw(ArgumentError("Unknown level"))
+        end
+    end
+    dirstring = joinpath([".." for i in 1:(this_idx - target_idx)]...)
 end
 
 end#module
