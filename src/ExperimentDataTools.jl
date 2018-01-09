@@ -215,4 +215,17 @@ function process_level(target_level::String, dir=pwd();kvs...)
     dirstring = joinpath(pl...)
 end
 
+function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: Any
+    pp = cd(dirs[1]) do
+        T(args...;kvs...)
+    end
+    @showprogress 1 "Processing dirs..." for d in dirs[2:end]
+        _pp = cd(d) do
+            T(args...;kvs...)
+        end
+        pp = hcat(pp, _pp)
+    end
+    return pp
+end
+
 end#module
