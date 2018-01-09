@@ -1,6 +1,6 @@
 abstract type RawData end
 
-import Base.zero
+import Base.zero, Base.hcat, Base.append!
 
 struct Trials end
 level(::Type{Trials}) = "session"
@@ -76,6 +76,47 @@ filename(::Type{LowpassData}) = "lowpass.mat"
 matname(X::LowpassData) = "lowpassdata"
 matname(X::Type{LowpassData}) = "lowpassdata"
 level(::Type{LowpassData}) = "channel"
+
+struct AlignedLFP
+    X::Matrix{Float64}
+    setid::AbstractVector{Int64}
+    t::AbstractVector{Float64}
+end
+
+function Base.hcat(al1::AlignedLFP, al2::AlignedLFP)
+    if !(al1.t == al2.t)
+        throw(ArgumentError("Both arguments should be aligned to the same time"))
+    end
+    X = hcat(al1.X, al2.X)
+    setid = vcat(al1.setid, al2.setid + al1.setid[end] )
+    AlignedLFP(X, setid, al1.t)
+end
+
+function Base.append!(al1::AlignedLFP, al2::AlignedLFP)
+    if !(al1.t == al2.t)
+        throw(ArgumentError("Both arguments should be aligned to the same time"))
+    end
+end
+
+function splitsets(al::AlignedLFP)
+    cc = countmap(al.setid)
+    nsets = unique(values(cc))
+    if length(nsets) != 1
+        throw(ArgumentError("Unequal number of trials detected"))
+    end
+    X = reshape(al.X, size(al.X,1), first(nsets), length(cc))
+    return X
+end
+
+function AlignedLFP(ldata::LowpassData, ttime::Vector{Int64}, window::Tuple{Int64,Int64})
+    X,t = LFPTools.align_lfp(ldata.data, ttime, ldata.sampling_rate, window)
+    AlignedLFP(X,fill(1,size(X,2)), t)
+end
+
+function AlignedLFP(start_time::Vector{Int64},window::Tuple{Int64,Int64})
+    ldata = LowpassData()
+    AlignedLFP(ldata, start_time, window)
+end
 
 function level(cwd::String)
     numbers = map(x->first(string(x)), 0:9)
