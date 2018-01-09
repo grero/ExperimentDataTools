@@ -11,7 +11,9 @@ using RippleTools
 using DataFrames
 using MAT
 import Base.parse
+import LFPTools.align_lfp
 
+include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("sessions.jl")
 
