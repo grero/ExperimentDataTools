@@ -129,9 +129,9 @@ function level(cwd::String)
     return ss
 end
 
-function getpath(session::String, channel::Int) 
-    _array = div(channel,32) + 1
-    chs = @sprintf "channel%03d" channel 
+function getpath(session::String, channel::Int)
+    _array = div(channel-1,32) + 1
+    chs = @sprintf "channel%03d" channel
     ahs = @sprintf "array%02d" _array
     _pth = joinpath(session,ahs, chs)
     _pth
