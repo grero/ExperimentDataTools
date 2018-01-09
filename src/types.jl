@@ -2,6 +2,33 @@ abstract type RawData end
 
 import Base.zero
 
+struct Trials end
+level(::Type{Trials}) = "session"
+filename(::Type{Trials}) = "event_markers.csv"
+
+function Trials()
+    ndir = process_level(Trials)
+    trials = cd(ndir) do
+        fname = filename(Trials)
+        if isfile(fname)
+            _ddf = readtable(fname;eltypes=[String, Float64])
+            words = Array(_ddf[:words])
+            timestamps = Array(_ddf[:timestamps])
+            trials = parse(Stimulus.NewTrial, words, timestamps)
+        else
+            #look for an nev file
+            fname = convert(String, (first(split(readchomp(`find . -name "*nev"`),'\n'))))
+            if !isempty(fname)
+                trials = parse(Stimulus.NewTrial, File(format"NSHR", fname))
+            else
+                trials = NewTrial[]
+            end
+        end
+        trials
+    end
+    return trials
+end
+
 mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
     data::Array{T1,1}
     channel::Int64
