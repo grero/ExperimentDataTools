@@ -208,7 +208,9 @@ function process_level(target_level::String, dir=pwd();kvs...)
             throw(ArgumentError("Unknown level"))
         end
     end
-    dirstring = joinpath([".." for i in 1:(this_idx - target_idx)]...)
+    pl = ["."]
+    append!(pl, [".." for i in 1:(this_idx - target_idx)])
+    dirstring = joinpath(pl...)
 end
 
 end#module
