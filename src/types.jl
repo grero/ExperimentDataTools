@@ -73,6 +73,16 @@ function HighpassData{T2<:Real}(sampling_rate::T2, low_freq::Float64, high_freq:
     HighpassData(sampling_rate, filter_coefs, filter_name, cutoff)
 end
 
+function HighpassData(args...)
+    fname = filename(HighpassData)
+    if isfile(fname)
+        hh = load_data(HighpassData, fname)
+    else
+        X = load(BroadbandData)
+        HighpassData(X, args...)
+    end
+end
+
 mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
     data::Array{T1,1}
     channel::Int64
