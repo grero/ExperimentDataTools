@@ -160,7 +160,29 @@ function Base.parse(::Type{Stimulus.NewTrial}, rfile::File{format"NSHR"})
     trials
 end
 
+function get_session_starts()
+    fname = filename(Trials)
+    session_start = Dict()
+    if isfile(fname)
+        _ddf = readtable(fname;eltypes=[String, Float64])
+        for r in eachrow(_ddf)
+            w = r[:words]
+            if w[1:2] == "11"
+                sid = parse(Int64,w[3:end], 2)
+                session_start[sid] = r[:timestamps]
+            end
+        end
+    end
+    # if we did not record the start of the first session, simply set it to 0
+    if !(1 in keys(session_start)) && (2 in keys(session_start))
+        session_start[1] = 0.0
+    end
+    session_start
+end
+
 function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
+    #get the trial structure
+    session_start = get_session_starts()
     _dd, bn = splitdir(rfile.filename)
     if isempty(_dd)
         _dd = "."
