@@ -168,7 +168,7 @@ function getpath(session::String, channel::Int)
     _pth
 end
 
-function save_data(X::RawData, session::String)
+function save_data(X::T, session::String) where T <: RawData
     _pth = getpath(session, X.channel)
     mkpath(_pth)
     fname = joinpath(_pth, filename(X))
@@ -201,4 +201,11 @@ function LowpassData()
         return load_data(LowpassData, fname)
     end
     return zero(LowpassData)
+end
+
+function load(::Type{T}, args...) where T <: RawData
+    dir = process_level(T)
+    qq = cd(dir) do
+        qq = T(args...)
+    end
 end
