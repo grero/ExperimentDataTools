@@ -30,6 +30,24 @@ function Trials()
     return trials
 end
 
+struct BroadbandData end
+level(::Type{BroadbandData}) = "day"
+
+function BroadbandData()
+    # check for ripple files
+    datafiles = split(readchomp(`find . -name "*.ns*" -d 1`), '\n')
+    if isempty(datafiles)
+        datafiles = split(readchomp(`find . -name "*.pl2*" -d 1`), '\n')
+        datafile = convert(String, datafiles[1])
+
+    else
+        datafile = convert(String, datafiles[1])
+
+    end
+    if isempty(datafiles)
+    end
+end
+
 mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
     data::Array{T1,1}
     channel::Int64
