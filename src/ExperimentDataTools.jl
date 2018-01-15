@@ -196,7 +196,6 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
             idx1 = 1
             sessions = collect(keys(session_start))
             sort!(sessions)
-            @show sessions
             for session in sessions
                 session_name = @sprintf "session%02d" session
                 _start = max(session_start[session],1.0)
@@ -218,12 +217,6 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
                     save_data(hhdata, session_name)
                 end
             end
-            #ttime_s = div.(ttime, div(fs,1000))
-            #X, x = LFPTools.align_lfp(data, ttime_s)
-            #MAT.matwrite("aligned_LFP_channel_$(channel).mat", Dict("data" => X, "time", x))
-            #fig = plot_lfp(Xβ, Xγ,x)
-            #fig[:savefig]("/Users/roger/Documents/research/monkey/training/Wiesel/$(session_name)_channel_$(ch)_lfp_data.pdf")
-            #plt[:close](fig)
         end
     end
 end
