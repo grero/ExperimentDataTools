@@ -192,13 +192,32 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
     open(rfile.filename, "r") do ff
         dd = RippleTools.DataPacket(ff)
         @showprogress 1 "Processing channels... " for ch in channels
-            filepath = "$(getpath(".", ch))/$(filename(LowpassData))"
-            if isfile(filepath)
-                continue
+            #separate into sessions
+            idx1 = 1
+            sessions = collect(keys(session_start))
+            sort!(sessions)
+            @show sessions
+            for session in sessions
+                session_name = @sprintf "session%02d" session
+                _start = max(session_start[session],1.0)
+                _end = get(session_start, session+1, size(dd.data,2)/fs)
+                idx1 = round(Int64, _start*fs)
+                idx2 = round(Int64, _end*fs)
+                # lowpass data
+                filepath = "$(getpath(session_name, ch))/$(filename(LowpassData))"
+                if !isfile(filepath)
+                    ldata,ff = LFPTools.lowpass_filter(float(dd.data[ch,idx1:idx2]),0.1, 250.0,fs)
+                    lldata = LowpassData(ldata, ch, 1000.0, ff, "Butterworth", 4, 0.1, 250.0)
+                    save_data(lldata, session_name)
+                end
+                filepath = "$(getpath(session_name, ch))/$(filename(HighpassData))"
+                if !isfile(filepath)
+                # highpass data
+                    hdata, ffh = LFPTools.bandpass_filter(float(dd.data[ch, idx1:idx2]), 300.0, 10_000.0)
+                    hhdata = HighpassData(hdata, ch, fs, ffh, "Butterworth", 4, 300.0, 10_000.0)
+                    save_data(hhdata, session_name)
+                end
             end
-            data,ff = LFPTools.lowpass_filter(float(dd.data[ch,:]),0.1, 250.0,fs)
-            ldata = LowpassData(data, ch, 1000.0, ff, "Butterworth", 4, 0.1, 250.0)
-            save_data(ldata, ".")
             #ttime_s = div.(ttime, div(fs,1000))
             #X, x = LFPTools.align_lfp(data, ttime_s)
             #MAT.matwrite("aligned_LFP_channel_$(channel).mat", Dict("data" => X, "time", x))
