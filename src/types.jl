@@ -147,6 +147,8 @@ function AlignedLFP(start_time::Vector{Int64},window::Tuple{Int64,Int64})
     AlignedLFP(ldata, start_time, window)
 end
 
+level() = level(pwd())
+
 function level(cwd::String)
     numbers = map(x->first(string(x)), 0:9)
     dd = last(splitdir(cwd))
