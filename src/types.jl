@@ -1,4 +1,5 @@
-abstract type RawData end
+abstract type NPTData end
+abstract type RawData <: NPTData end
 
 import Base.zero, Base.hcat, Base.append!
 
