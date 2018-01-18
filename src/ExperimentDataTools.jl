@@ -16,6 +16,8 @@ import LFPTools.align_lfp
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("sessions.jl")
+include("behaviour.jl")
+include("spikesorting.jl")
 
 export HighpassData, LowpassData
 
