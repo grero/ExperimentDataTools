@@ -30,6 +30,18 @@ function Trials()
     return trials
 end
 
+struct OldTrials <: NPTData
+    data::Vector{Stimulus.Trial}
+    setid::AbstractVector{Int64}
+end
+level(::Type{OldTrials}) = "session"
+filename(::Type{OldTrials}) = "event_dat.mat"
+
+function OldTrials()
+    trials = Stimulus.loadTrialInfo("event_data.mat")
+    OldTrials(trials, fill(1, length(trials)))
+end
+
 struct BroadbandData end
 level(::Type{BroadbandData}) = "day"
 
