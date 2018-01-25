@@ -203,7 +203,7 @@ function LowpassData()
     return zero(LowpassData)
 end
 
-function load(::Type{T}, args...) where T <: RawData
+function load(::Type{T}, args...) where T <: NPTData
     dir = process_level(T)
     qq = cd(dir) do
         qq = T(args...)
