@@ -9,6 +9,7 @@ using DSP
 using LFPTools
 using RippleTools
 using DataFrames
+using Glob
 using MAT
 import Base.parse
 import LFPTools.align_lfp
@@ -262,6 +263,13 @@ function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <
         pp = hcat(pp, _pp)
     end
     return pp
+end
+
+"""
+Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
+"""
+function process_old_data()
+    files = glob("*highpass.*")
 end
 
 end#module
