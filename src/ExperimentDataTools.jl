@@ -1,6 +1,7 @@
 module ExperimentDataTools
 using ProgressMeter
 using SpikeSorter
+using Eyelink
 using Stimulus
 using FileIO
 using MAT
