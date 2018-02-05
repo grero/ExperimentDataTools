@@ -20,7 +20,7 @@ include("sessions.jl")
 include("behaviour.jl")
 include("spikesorting.jl")
 
-export NPTData, HighpassData, LowpassData
+export NPTData, HighpassData, LowpassData, OldTrials
 
 const levels = ["days", "day", "session", "array", "channel", "cell"]
 
