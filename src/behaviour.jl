@@ -76,10 +76,26 @@ function EyeTrials()
         else
             distractors = [Stimulus.Distractor(0.0, 0.0, NaN)]
         end
+        _saccade = data["saccade"][i]
+        if isempty(_saccade)
+            nsaccade = 0
+        else
+            nsaccade = length(_saccade["endx"])
+        end
+        saccade = Vector{Eyelink.Saccade}(nsaccade)
+        for j in 1:length(saccade)
+            endx = _saccade["endx"][j]
+            startx = _saccade["startx"][j]
+            endy = _saccade["endy"][j]
+            starty = _saccade["starty"][j]
+            onset = _saccade["onset"][j]
+            offset = _saccade["offset"][j]
+            saccade[j] = Eyelink.Saccade(onset, offset, startx, starty, endx, endy, i)
+        end
         trial_end = data["end"][i]
         trials[i] = Stimulus.EyeTraceTrial(target, distractors, trial_start, trial_end, prestim,
                                            delay, stimstart, trial_response, reward, reward_duration,
-                                           failure, gazex, gazey, pupil, gtime)
+                                           failure, gazex, gazey, pupil, gtime, saccade)
     end
-    trials
+    EyeTrials(trials, fill(1, length(trials)))
 end
