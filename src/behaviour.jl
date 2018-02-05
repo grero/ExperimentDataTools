@@ -45,7 +45,7 @@ function EyeTrials()
     fname = filename(EyeTrials)
     ff = MAT.matread(fname)
     data = ff["et"]["data"]["trials"]
-    ntrials = length(data)
+    ntrials = length(data["start"])
     trials = Vector{Stimulus.EyeTraceTrial}(ntrials)
     for i in 1:ntrials
         trial_start = float(data["start"][i])
