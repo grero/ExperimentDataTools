@@ -35,7 +35,7 @@ struct OldTrials <: NPTData
     setid::AbstractVector{Int64}
 end
 level(::Type{OldTrials}) = "session"
-filename(::Type{OldTrials}) = "event_dat.mat"
+filename(::Type{OldTrials}) = "event_data.mat"
 
 function OldTrials()
     trials = Stimulus.loadTrialInfo("event_data.mat")
