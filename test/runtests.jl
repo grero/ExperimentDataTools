@@ -90,5 +90,11 @@ function test_reorganising_sessions()
     cd(cwd)
 end
 
+function test_level_functions()
+    _name = ExperimentDataTools.get_level_name("days","newWorkingMemory/Pancake/20130923/")
+    @test _name == "20130923"
+end
+
 test_highpass()
 test_reorganising_sessions()
+test_level_functions()

@@ -253,7 +253,24 @@ function process_level(target_level::String, dir=pwd();kvs...)
     dirstring = joinpath(pl...)
 end
 
-function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: Any
+"""
+Get the name of the requested level
+"""
+function get_level_name(target_level::String, dir=pwd())
+    this_level = level(dir)
+    this_idx = findfirst(l->this_level==l, levels)
+    target_idx = findfirst(l->target_level==l, levels)
+    i = this_idx
+    cwd = dir
+    pp = ""
+    while i >= target_idx
+        cwd, pp = splitdir(cwd)
+        i -= 1
+    end
+    pp
+end
+
+function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: NPTData
     pp = cd(dirs[1]) do
         T(args...;kvs...)
     end
