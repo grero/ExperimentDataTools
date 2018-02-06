@@ -85,14 +85,18 @@ function HighpassData{T2<:Real}(sampling_rate::T2, low_freq::Float64, high_freq:
     HighpassData(sampling_rate, filter_coefs, filter_name, cutoff)
 end
 
-function HighpassData(args...)
+function Base.zero(::Type{HighpassData{T1, T2}}) where T1 <: Real where T2 <: Real
+    HighpassData(T1[], 0, zero(T2), ZeroPoleGain([0.0], [0.0], 0.0),"", 0, 0.0, 0.0)
+end
+
+function HighpassData()
     fname = filename(HighpassData)
     if isfile(fname)
         hh = load_data(HighpassData, fname)
     else
-        X = load(BroadbandData)
-        HighpassData(X, args...)
+        hh = zero(HighpassData)
     end
+    hh
 end
 
 mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
