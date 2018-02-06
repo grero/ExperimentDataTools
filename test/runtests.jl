@@ -82,7 +82,7 @@ function test_reorganising_sessions()
     end
     LibGit2.commit(repo, "Adds files")
     cd(repo_path)
-    ExperimentDataTools.process(;commit_message="Cleanup") 
+    ExperimentDataTools.process(;commit_message="Cleanup")
     for f in files
         nf = "session01/$f"
         @test isfile(nf)
