@@ -130,7 +130,7 @@ function HighpassData(X::Array{Float64,1}, channel::Int64, sampling_rate::Float6
     #clunky way of getting the filter name
     filter_name = convert(String, split(string(filter_method), ".")[end])
     filter_name = "$(filter_name)($(filter_order))"
-    HighpassData(Y, channel, sampling_rate, ff, filter_name, cutoff)
+    HighpassData(Y, channel, sampling_rate, ff, filter_name, filter_order, cutoff, 10000.0)
 end
 
 function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
