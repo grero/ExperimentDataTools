@@ -57,6 +57,8 @@ function test_highpass()
         @show pwd()
         ExperimentDataTools.HighpassData()
     end
+    #cleanup
+    rm("session01/array01/channel001";recursive=true)
     @test H.channel == H2.channel
     @test H.sampling_rate ≈ H2.sampling_rate
     @test H.low_freq ≈ H2.low_freq
@@ -72,22 +74,24 @@ end
 function test_reorganising_sessions()
     cwd = pwd()
     dd = tempdir()
-    cd(dd)
-    repo_path = "test"
-    repo = LibGit2.init(repo_path)
-    files = ["w7_11_1.edf", "w7_11_1_settings.txt", "w7_11_1_results.txt"]
-    for f in files
-        touch("$(repo_path)/$f")
-        LibGit2.add!(repo, f)
+    cd(dd) do
+        repo_path = "test"
+        repo = LibGit2.init(repo_path)
+        files = ["w7_11_1.edf", "w7_11_1_settings.txt", "w7_11_1_results.txt"]
+        for f in files
+            touch("$(repo_path)/$f")
+            LibGit2.add!(repo, f)
+        end
+        LibGit2.commit(repo, "Adds files")
+        cd(repo_path) do
+            ExperimentDataTools.process(;commit_message="Cleanup")
+            for f in files
+                nf = "session01/$f"
+                @test isfile(nf)
+            end
+        end
+        rm(repo_path;recursive=true)
     end
-    LibGit2.commit(repo, "Adds files")
-    cd(repo_path)
-    ExperimentDataTools.process(;commit_message="Cleanup")
-    for f in files
-        nf = "session01/$f"
-        @test isfile(nf)
-    end
-    cd(cwd)
 end
 
 function test_level_functions()
