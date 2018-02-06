@@ -53,10 +53,14 @@ function test_highpass()
     end
     H = HighpassData(X, 1, 40_000.0, 300.0, Butterworth, 4)
     ExperimentDataTools.save_data(H, "session01")
-    H2 = ExperimentDataTools.load_data(ExperimentDataTools.HighpassData, "session01/array01/channel001/highpassdata.mat")
+    H2 = cd("session01/array01/channel001") do
+        @show pwd()
+        ExperimentDataTools.HighpassData()
+    end
     @test H.channel == H2.channel
     @test H.sampling_rate ≈ H2.sampling_rate
-    @test H.cutoff ≈ H2.cutoff
+    @test H.low_freq ≈ H2.low_freq
+    @test H.high_freq ≈ H2.high_freq
     @test H.data ≈ H2.data
     @test H.filter_name == H2.filter_name
     @test H.filter_coefs.p ≈ H2.filter_coefs.p
