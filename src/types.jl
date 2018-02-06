@@ -42,7 +42,7 @@ function OldTrials()
     OldTrials(trials, fill(1, length(trials)))
 end
 
-struct BroadbandData end
+struct BroadbandData <: NPTData end
 level(::Type{BroadbandData}) = "day"
 
 function BroadbandData()
