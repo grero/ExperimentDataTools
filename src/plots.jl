@@ -27,6 +27,9 @@ function plot_data(::Type{EDT.HighpassData}, window::AbstractVector{Int64}, dirs
     end
     ax[:spines]["top"][:set_visible](false)
     ax[:spines]["right"][:set_visible](false)
+    ax[:spines]["left"][:set_visible](false)
+    ax[:set_yticks]([])
+    ax[:set_yticklabels]([])
     fig
 end
 
