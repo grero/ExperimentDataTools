@@ -12,6 +12,7 @@ using RippleTools
 using DataFrames
 using Glob
 using MAT
+using HDF5
 import Base.parse
 import LFPTools.align_lfp
 
