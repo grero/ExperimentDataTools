@@ -15,11 +15,15 @@ using MAT
 using HDF5
 import Base.parse
 import LFPTools.align_lfp
+using DataProcessingHierarchyTools
+const DPHT = DataProcessingHierarchyTools
+import DataProcessingHierarchyTools: filename, level
 
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("sessions.jl")
 include("behaviour.jl")
+include("spiketrains.jl")
 include("spikesorting.jl")
 
 export NPTData, HighpassData, LowpassData, OldTrials
