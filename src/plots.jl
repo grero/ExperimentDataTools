@@ -11,6 +11,19 @@ function plot_data(::Type{EDT.HighpassData}, window::AbstractVector{Int64})
     fig
 end
 
+function plot_data(::Type{EDT.SpikeTrainData},window::AbstractVector{Float64})
+    sptrain = EDT.SpikeTrainData()
+    tt = sptrain.data.timestamps
+    idx1 = findfirst(t->t>window[1], tt)
+    idx2 = findlast(t->t<window[end], tt)
+    _tt = tt[idx1:idx2]
+    y = [-1.0 1.0].*ones(idx2-idx1+1,2)
+    fig = plt[:figure]()
+    ax = fig[:add_subplot](111)
+    ax[:plot]([_tt _tt]',y';color="k") 
+    fig
+end
+
 function plot_data(::Type{EDT.HighpassData}, window::AbstractVector{Int64}, dirs::Vector{String})
     fig = plt[:figure]()
     ax = fig[:add_subplot](111)
