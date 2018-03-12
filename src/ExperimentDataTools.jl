@@ -10,6 +10,8 @@ using LFPTools
 using RippleTools
 using DataFrames
 using MAT
+using Glob
+using LegacyFileReaders
 import Base.parse
 import LFPTools.align_lfp
 
@@ -262,6 +264,32 @@ function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <
         pp = hcat(pp, _pp)
     end
     return pp
+end
+
+function process_old_data(channels::AbstractVector{Int64})
+    files = glob("highpass/*highpass.*")
+    sort!(files)
+    data = LegacyFileReaders.load(File(format"NPTD", files[1]))
+    sampling_rate = data.header.samplingrate
+    if data.header.transpose
+        nchannels = size(data.data,2)
+    else
+        nchannels = size(data.data,1)
+    end
+    filter_coefs = digitalfilter(Bandpass(250.0, 10000.0;fs=sampling_rate),Butterworth(4))
+    @showprogress 1 "Processing channels..." for ch in intersect(channels,1:nchannels)
+        hdata = Array{eltype(data.data),1}(0)
+        for f in files
+            data = LegacyFileReaders.load(File(format"NPTD", f))
+            if data.header.transpose
+                append!(hdata, data.data[:,ch])
+            else
+                append!(hdata, data.data[ch,:])
+            end
+        end
+        H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0) 
+        save_data(H, ".")
+    end
 end
 
 end#module
