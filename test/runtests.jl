@@ -101,6 +101,8 @@ end
         array, channel = ExperimentDataTools.get_flat_channel(cellname, _config)
         @test array == 2
         @test channel == 62
+        pth = ExperimentDataTools.get_cell_path(cellname, _config)
+        @test pth == "array02/channel062"
     end
 end
 

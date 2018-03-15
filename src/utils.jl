@@ -44,3 +44,10 @@ function get_flat_channel(cellname::String,config::Dict{String, T}) where T <: R
     end
     array, channel 
 end
+
+function get_cell_path(cellname, config)
+    array,channel = get_flat_channel(cellname,config)
+    arrayname = @sprintf "array%02d" array
+    channelname = @sprintf "channel%03d" channel
+    joinpath(arrayname, channelname)
+end
