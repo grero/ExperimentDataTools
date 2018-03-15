@@ -163,19 +163,6 @@ function AlignedLFP(start_time::Vector{Int64},window::Tuple{Int64,Int64})
     AlignedLFP(ldata, start_time, window)
 end
 
-level() = level(pwd())
-
-function level(cwd::String)
-    numbers = map(x->first(string(x)), 0:9)
-    dd = last(splitdir(cwd))
-    ss = rstrip(dd, numbers)
-    if isempty(ss)
-        # only numbers; assume this is a date
-        return "day"
-    end
-    return ss
-end
-
 function getpath(session::String, channel::Int)
     _array = div(channel-1,32) + 1
     chs = @sprintf "channel%03d" channel
