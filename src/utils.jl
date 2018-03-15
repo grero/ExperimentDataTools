@@ -7,10 +7,10 @@ function dissect_cell(cell::String)
 end
 
 function parse(::Type{T},a::String) where  T <: Range{T2} where T2 <: Integer 
-	m = match(r"([0-9]*)[\-\:]([0-9]*)",a)
+	m = match(r"([0-9]*)[-:]([0-9]*)",a)
     mc = m.captures
     isempty(mc) && return nothing
-    return range(map(s->parse(T,s),mc)...)
+    return T(map(s->parse(T2,String(s)),mc)...)
 end
 
 function channel_config(fname::String)
