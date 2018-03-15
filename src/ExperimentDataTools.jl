@@ -21,6 +21,7 @@ import DataProcessingHierarchyTools: filename, level
 
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
+include("utils.jl")
 include("sessions.jl")
 include("behaviour.jl")
 include("spiketrains.jl")
