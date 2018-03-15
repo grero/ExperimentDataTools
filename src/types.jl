@@ -1,11 +1,10 @@
-abstract type NPTData end
-abstract type RawData <: NPTData end
+abstract type RawData <: DPHData end
 
 import Base.zero, Base.hcat, Base.append!
 
 struct Trials end
-level(::Type{Trials}) = "session"
-filename(::Type{Trials}) = "event_markers.csv"
+DataProcessingHierarchyTools.level(::Type{Trials}) = "session"
+DataProcessingHierarchyTools.filename(::Type{Trials}) = "event_markers.csv"
 
 function Trials()
     ndir = process_level(Trials)
@@ -30,19 +29,19 @@ function Trials()
     return trials
 end
 
-struct OldTrials <: NPTData
+struct OldTrials <: DPHData
     data::Vector{Stimulus.Trial}
     setid::AbstractVector{Int64}
 end
-level(::Type{OldTrials}) = "session"
-filename(::Type{OldTrials}) = "event_data.mat"
+DataProcessingHierarchyTools.level(::Type{OldTrials}) = "session"
+DataProcessingHierarchyTools.filename(::Type{OldTrials}) = "event_data.mat"
 
 function OldTrials()
     trials = Stimulus.loadTrialInfo("event_data.mat")
     OldTrials(trials, fill(1, length(trials)))
 end
 
-struct BroadbandData <: NPTData end
+struct BroadbandData <: DPHData end
 level(::Type{BroadbandData}) = "day"
 
 function BroadbandData()
@@ -72,7 +71,8 @@ mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
 end
 
 filename(X::HighpassData) = "highpass.mat"
-filename(::Type{HighpassData}) = "highpass.mat"
+DPHT.filename(::Type{HighpassData}) = "highpass.mat"
+DPHT.level(::Type{HighpassData}) = "channel"
 matname(X::HighpassData) = "highpassdata"
 matname(::Type{HighpassData}) = "highpassdata"
 
@@ -244,11 +244,4 @@ function LowpassData()
         return load_data(LowpassData, fname)
     end
     return zero(LowpassData)
-end
-
-function load(::Type{T}, args...) where T <: NPTData
-    dir = process_level(T)
-    qq = cd(dir) do
-        qq = T(args...)
-    end
 end

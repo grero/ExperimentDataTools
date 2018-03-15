@@ -101,4 +101,3 @@ end
 
 test_highpass()
 test_reorganising_sessions()
-test_level_functions()

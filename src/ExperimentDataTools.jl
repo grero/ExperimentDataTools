@@ -275,21 +275,8 @@ function get_level_name(target_level::String, dir=pwd())
     pp
 end
 
-function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: NPTData
-    pp = cd(dirs[1]) do
-        T(args...;kvs...)
-    end
-    @showprogress 1 "Processing dirs..." for d in dirs[2:end]
-        _pp = cd(d) do
-            T(args...;kvs...)
-        end
-        pp = hcat(pp, _pp)
-    end
-    return pp
-end
-
 """
-Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
+Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file.
 """
 function process_old_data()
     files = glob("*highpass.*")
