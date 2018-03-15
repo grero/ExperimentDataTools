@@ -10,6 +10,7 @@ using DSP
 using LFPTools
 using RippleTools
 using DataFrames
+using CSV
 using Glob
 using MAT
 using HDF5
