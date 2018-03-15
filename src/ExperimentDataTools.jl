@@ -289,7 +289,9 @@ function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <
     return pp
 end
 
-<<<<<<< HEAD
+"""
+Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
+"""
 function process_old_data(channels::AbstractVector{Int64})
     files = glob("highpass/*highpass.*")
     sort!(files)
@@ -314,13 +316,10 @@ function process_old_data(channels::AbstractVector{Int64})
         H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0) 
         save_data(H, ".")
     end
-=======
-"""
-Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
-"""
+end
+
 function process_old_data()
     files = glob("*highpass.*")
->>>>>>> 35336fa9f6ea12b9b127266ae1fa97d5745496b2
 end
 
 end#module
