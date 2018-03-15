@@ -30,7 +30,19 @@ function Trials()
     return trials
 end
 
-struct BroadbandData end
+struct OldTrials <: NPTData
+    data::Vector{Stimulus.Trial}
+    setid::AbstractVector{Int64}
+end
+level(::Type{OldTrials}) = "session"
+filename(::Type{OldTrials}) = "event_data.mat"
+
+function OldTrials()
+    trials = Stimulus.loadTrialInfo("event_data.mat")
+    OldTrials(trials, fill(1, length(trials)))
+end
+
+struct BroadbandData <: NPTData end
 level(::Type{BroadbandData}) = "day"
 
 function BroadbandData()
@@ -73,14 +85,18 @@ function HighpassData{T2<:Real}(sampling_rate::T2, low_freq::Float64, high_freq:
     HighpassData(sampling_rate, filter_coefs, filter_name, cutoff)
 end
 
-function HighpassData(args...)
+function Base.zero(::Type{HighpassData{T1, T2}}) where T1 <: Real where T2 <: Real
+    HighpassData(T1[], 0, zero(T2), ZeroPoleGain([0.0], [0.0], 0.0),"", 0, 0.0, 0.0)
+end
+
+function HighpassData()
     fname = filename(HighpassData)
     if isfile(fname)
         hh = load_data(HighpassData, fname)
     else
-        X = load(BroadbandData)
-        HighpassData(X, args...)
+        hh = zero(HighpassData)
     end
+    hh
 end
 
 mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
@@ -185,14 +201,41 @@ function save_data(X::T, session::String) where T <: RawData
 end
 
 function load_data(::Type{T}, fname::String) where T <: RawData
-    mat_dict = MAT.matread(fname)
-    _data = mat_dict[matname(T)]["data"]
-    fn = _data["filter_name"]
-    fo = _data["filter_order"]
-    bb = _data["filter_coefs"]
-    ff = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
-    T(_data["data"], _data["channel"], _data["sampling_rate"],
-                 ff, fn,fo, _data["low_freq"], _data["high_freq"])
+    if ishdf5(fname)
+        X = h5open(fname,"r") do ff
+            _fn = read(ff, "highpassdata/data/filter_name")
+            #convoluted way of reading a string from hdf5
+            readbuf = IOBuffer(reinterpret(UInt8, _fn[:]))
+            fn = String(read(readbuf))
+            fn = replace(fn, "\0","")
+            fo = read(ff, "highpassdata/data/filter_order")[1]
+            bb = read(ff, "highpassdata/data/filter_coefs")
+            low_freq = read(ff, "highpassdata/data/low_freq")[1]
+            high_freq = read(ff, "highpassdata/data/high_freq")[1]
+            channel = read(ff, "highpassdata/data/channel")[1]
+            sampling_rate = read(ff, "highpassdata/data/sampling_rate")[1]
+            bb["k"] = bb["k"][1]
+            bb["z"] = [r.data[1] + r.data[2]*1im for r in bb["z"]]
+            bb["p"] = [r.data[1] + r.data[2]*1im for r in bb["p"]]
+            _filter = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
+            if ismmappable(ff["highpassdata/data/data"])
+                _data = readmmap(ff["highpassdata/data/data"])
+            else
+                _data = read(ff,"highpassdata/data/data")
+            end
+            T(_data,channel, sampling_rate, _filter, fn, fo, low_freq, high_freq )
+        end
+    else
+        mat_dict = MAT.matread(fname)
+        _data = mat_dict[matname(T)]["data"]
+        fn = _data["filter_name"]
+        fo = _data["filter_order"]
+        bb = _data["filter_coefs"]
+        ff = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
+        X = T(_data["data"], _data["channel"], _data["sampling_rate"],
+                     ff, fn,fo, _data["low_freq"], _data["high_freq"])
+    end
+    X
 end
 
 function LowpassData()
@@ -203,7 +246,7 @@ function LowpassData()
     return zero(LowpassData)
 end
 
-function load(::Type{T}, args...) where T <: RawData
+function load(::Type{T}, args...) where T <: NPTData
     dir = process_level(T)
     qq = cd(dir) do
         qq = T(args...)

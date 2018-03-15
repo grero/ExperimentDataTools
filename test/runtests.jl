@@ -53,10 +53,16 @@ function test_highpass()
     end
     H = HighpassData(X, 1, 40_000.0, 300.0, Butterworth, 4)
     ExperimentDataTools.save_data(H, "session01")
-    H2 = ExperimentDataTools.load_data(ExperimentDataTools.HighpassData, "session01/array01/channel001/highpassdata.mat")
+    H2 = cd("session01/array01/channel001") do
+        @show pwd()
+        ExperimentDataTools.HighpassData()
+    end
+    #cleanup
+    rm("session01/array01/channel001";recursive=true)
     @test H.channel == H2.channel
     @test H.sampling_rate ≈ H2.sampling_rate
-    @test H.cutoff ≈ H2.cutoff
+    @test H.low_freq ≈ H2.low_freq
+    @test H.high_freq ≈ H2.high_freq
     @test H.data ≈ H2.data
     @test H.filter_name == H2.filter_name
     @test H.filter_coefs.p ≈ H2.filter_coefs.p
@@ -68,23 +74,31 @@ end
 function test_reorganising_sessions()
     cwd = pwd()
     dd = tempdir()
-    cd(dd)
-    repo_path = "test"
-    repo = LibGit2.init(repo_path)
-    files = ["w7_11_1.edf", "w7_11_1_settings.txt", "w7_11_1_results.txt"]
-    for f in files
-        touch("$(repo_path)/$f")
-        LibGit2.add!(repo, f)
+    cd(dd) do
+        repo_path = "test"
+        repo = LibGit2.init(repo_path)
+        files = ["w7_11_1.edf", "w7_11_1_settings.txt", "w7_11_1_results.txt"]
+        for f in files
+            touch("$(repo_path)/$f")
+            LibGit2.add!(repo, f)
+        end
+        LibGit2.commit(repo, "Adds files")
+        cd(repo_path) do
+            ExperimentDataTools.process(;commit_message="Cleanup")
+            for f in files
+                nf = "session01/$f"
+                @test isfile(nf)
+            end
+        end
+        rm(repo_path;recursive=true)
     end
-    LibGit2.commit(repo, "Adds files")
-    cd(repo_path)
-    ExperimentDataTools.process(;commit_message="Cleanup") 
-    for f in files
-        nf = "session01/$f"
-        @test isfile(nf)
-    end
-    cd(cwd)
+end
+
+function test_level_functions()
+    _name = ExperimentDataTools.get_level_name("days","newWorkingMemory/Pancake/20130923/")
+    @test _name == "20130923"
 end
 
 test_highpass()
 test_reorganising_sessions()
+test_level_functions()

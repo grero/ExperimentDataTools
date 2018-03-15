@@ -1,6 +1,7 @@
 module ExperimentDataTools
 using ProgressMeter
 using SpikeSorter
+using Eyelink
 using Stimulus
 using FileIO
 using MAT
@@ -9,19 +10,24 @@ using DSP
 using LFPTools
 using RippleTools
 using DataFrames
-using MAT
 using Glob
+using MAT
 using LegacyFileReaders
+using HDF5
 import Base.parse
 import LFPTools.align_lfp
+using DataProcessingHierarchyTools
+const DPHT = DataProcessingHierarchyTools
+import DataProcessingHierarchyTools: filename, level
 
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("sessions.jl")
 include("behaviour.jl")
+include("spiketrains.jl")
 include("spikesorting.jl")
 
-export HighpassData, LowpassData
+export NPTData, HighpassData, LowpassData, OldTrials
 
 const levels = ["days", "day", "session", "array", "channel", "cell"]
 
@@ -130,7 +136,7 @@ function HighpassData(X::Array{Float64,1}, channel::Int64, sampling_rate::Float6
     #clunky way of getting the filter name
     filter_name = convert(String, split(string(filter_method), ".")[end])
     filter_name = "$(filter_name)($(filter_order))"
-    HighpassData(Y, channel, sampling_rate, ff, filter_name, cutoff)
+    HighpassData(Y, channel, sampling_rate, ff, filter_name, filter_order, cutoff, 10000.0)
 end
 
 function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
@@ -253,7 +259,24 @@ function process_level(target_level::String, dir=pwd();kvs...)
     dirstring = joinpath(pl...)
 end
 
-function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: Any
+"""
+Get the name of the requested level
+"""
+function get_level_name(target_level::String, dir=pwd())
+    this_level = level(dir)
+    this_idx = findfirst(l->this_level==l, levels)
+    target_idx = findfirst(l->target_level==l, levels)
+    i = this_idx
+    cwd = dir
+    pp = ""
+    while i >= target_idx
+        cwd, pp = splitdir(cwd)
+        i -= 1
+    end
+    pp
+end
+
+function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: NPTData
     pp = cd(dirs[1]) do
         T(args...;kvs...)
     end
@@ -266,6 +289,7 @@ function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <
     return pp
 end
 
+<<<<<<< HEAD
 function process_old_data(channels::AbstractVector{Int64})
     files = glob("highpass/*highpass.*")
     sort!(files)
@@ -290,6 +314,13 @@ function process_old_data(channels::AbstractVector{Int64})
         H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0) 
         save_data(H, ".")
     end
+=======
+"""
+Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
+"""
+function process_old_data()
+    files = glob("*highpass.*")
+>>>>>>> 35336fa9f6ea12b9b127266ae1fa97d5745496b2
 end
 
 end#module
