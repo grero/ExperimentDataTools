@@ -98,11 +98,12 @@ end
     @testset "Cellnames" begin
         _config = Dict("vFEF" => 1:32, "dFEF" => 33:64)
         cellname = "dFEF_g30c1"
-        array, channel = ExperimentDataTools.get_flat_channel(cellname, _config)
+        array, channel, cc = ExperimentDataTools.get_flat_channel(cellname, _config)
+        @test cc == 1
         @test array == 2
         @test channel == 62
         pth = ExperimentDataTools.get_cell_path(cellname, _config)
-        @test pth == "array02/channel062"
+        @test pth == "array02/channel062/cell01"
     end
 end
 
