@@ -52,3 +52,19 @@ function get_cell_path(cellname, config)
     cellname = @sprintf "cell%02d" cell
     joinpath(arrayname, channelname, cellname)
 end
+
+function get_area(dir::String,config::ChannelConfig=ChannelConfig())
+    m = match(r"array([0-9]*)", dir)
+    if m != nothing
+        array_index = parse(Int64,m.captures[1])
+        sidx = sortperm(collect(values(config.config)),by=s->first(s))
+        area = collect(keys(config.config))[sidx][array_index]
+    else
+        area = "unknown"
+    end
+    area
+end
+
+function shortname()
+    error("Not implemented")
+end
