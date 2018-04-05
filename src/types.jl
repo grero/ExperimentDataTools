@@ -232,3 +232,17 @@ function LowpassData()
     end
     return zero(LowpassData)
 end
+
+struct ChannelConfig <: DPHT.DPHData
+    config::Dict{String, UnitRange{Int64}}
+end
+
+DPHT.level(::Type{ChannelConfig}) = "subject"
+DPHT.filename(::Type{ChannelConfig}) = "channel_config.csv"
+
+function ChannelConfig()
+    _config = cd(DPHT.process_level(level(ChannelConfig))) do
+        ExperimentDataTools.channel_config(filename(ChannelConfig))
+    end
+    ChannelConfig(_config)
+end

@@ -28,7 +28,7 @@ include("behaviour.jl")
 include("spiketrains.jl")
 include("spikesorting.jl")
 
-export HighpassData, LowpassData, OldTrials
+export HighpassData, LowpassData, OldTrials, ChannelConfig
 
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
