@@ -3,12 +3,12 @@ abstract type RawData <: NPTData end
 
 import Base.zero, Base.hcat, Base.append!
 
-struct Trials end
-level(::Type{Trials}) = "session"
-filename(::Type{Trials}) = "event_markers.csv"
+struct Trials <: DPHT.DPHData end
+DPHT.level(::Type{Trials}) = "session"
+DPHT.filename(::Type{Trials}) = "event_markers.csv"
 
 function Trials()
-    ndir = process_level(Trials)
+    ndir = DPHT.process_level(Trials)
     trials = cd(ndir) do
         fname = filename(Trials)
         if isfile(fname)
@@ -161,19 +161,6 @@ end
 function AlignedLFP(start_time::Vector{Int64},window::Tuple{Int64,Int64})
     ldata = LowpassData()
     AlignedLFP(ldata, start_time, window)
-end
-
-level() = level(pwd())
-
-function level(cwd::String)
-    numbers = map(x->first(string(x)), 0:9)
-    dd = last(splitdir(cwd))
-    ss = rstrip(dd, numbers)
-    if isempty(ss)
-        # only numbers; assume this is a date
-        return "day"
-    end
-    return ss
 end
 
 function getpath(session::String, channel::Int)
