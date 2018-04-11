@@ -30,8 +30,6 @@ include("spikesorting.jl")
 
 export NPTData, HighpassData, LowpassData, OldTrials
 
-const levels = ["days", "day", "session", "array", "channel", "cell"]
-
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
 """
@@ -230,64 +228,6 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
             end
         end
     end
-end
-
-"""
-Process the current directory, looking for data of type `T`.
-"""
-function process_dir(::Type{T}, dir=pwd();redo=false, save=true) where T <: Any
-    cd(dir) do
-    end
-end
-
-function process_level(::Type{T}, dir=pwd();kvs...) where T <: Any
-    target_level = level(T)
-    process_level(target_level, dir;kvs...)
-end
-
-function process_level(target_level::String, dir=pwd();kvs...)
-    # get the current level
-    this_level = level(dir)
-    this_idx = findfirst(l->this_level==l, levels)
-    target_idx = findfirst(l->target_level==l, levels)
-    for lidx in [this_idx, target_idx]
-        if !(0 < lidx <= length(levels))
-            throw(ArgumentError("Unknown level"))
-        end
-    end
-    pl = ["."]
-    append!(pl, [".." for i in 1:(this_idx - target_idx)])
-    dirstring = joinpath(pl...)
-end
-
-"""
-Get the name of the requested level
-"""
-function get_level_name(target_level::String, dir=pwd())
-    this_level = level(dir)
-    this_idx = findfirst(l->this_level==l, levels)
-    target_idx = findfirst(l->target_level==l, levels)
-    i = this_idx
-    cwd = dir
-    pp = ""
-    while i >= target_idx
-        cwd, pp = splitdir(cwd)
-        i -= 1
-    end
-    pp
-end
-
-function process_dirs(::Type{T}, dirs::Vector{String}, args...;kvs...) where T <: NPTData
-    pp = cd(dirs[1]) do
-        T(args...;kvs...)
-    end
-    @showprogress 1 "Processing dirs..." for d in dirs[2:end]
-        _pp = cd(d) do
-            T(args...;kvs...)
-        end
-        pp = hcat(pp, _pp)
-    end
-    return pp
 end
 
 """
