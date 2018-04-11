@@ -25,7 +25,7 @@ include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("sessions.jl")
 include("behaviour.jl")
-include("spiketrains.jl")
+#include("spiketrains.jl")
 include("spikesorting.jl")
 
 export NPTData, HighpassData, LowpassData, OldTrials
