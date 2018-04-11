@@ -1,16 +1,19 @@
 module ExperimentDataTools
 using ProgressMeter
+using SpikeExtraction
+using SpikeSorter
+using HMMSpikeSorter
 using Eyelink
 using Stimulus
 using FileIO
 using MAT
 using DataFrames
-using SpikeSorter
 using Spiketrains
 using DSP
 using LFPTools
 using RippleTools
 using DataFrames
+using CSV
 using Glob
 using MAT
 using LegacyFileReaders
@@ -23,12 +26,14 @@ import DataProcessingHierarchyTools: filename, level
 
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
+include("utils.jl")
 include("sessions.jl")
 include("behaviour.jl")
 #include("spiketrains.jl")
 include("spikesorting.jl")
+include("multunit.jl")
 
-export NPTData, HighpassData, LowpassData, OldTrials
+export HighpassData, LowpassData, OldTrials, ChannelConfig, MultiUnit
 
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
@@ -231,7 +236,7 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
 end
 
 """
-Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
+Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored in the same file.
 """
 function process_old_data(channels::AbstractVector{Int64}=Int64[])
     files = glob("highpass/*highpass.*")

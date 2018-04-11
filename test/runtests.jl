@@ -94,11 +94,19 @@ function test_reorganising_sessions()
     end
 end
 
-function test_level_functions()
-    _name = ExperimentDataTools.get_level_name("days","newWorkingMemory/Pancake/20130923/")
-    @test _name == "20130923"
+@testset "Utils" begin
+    @testset "Cellnames" begin
+        _config = Dict("vFEF" => 1:32, "dFEF" => 33:64)
+        cellname = "dFEF_g30c1"
+        array, channel, cc = ExperimentDataTools.get_flat_channel(cellname, _config)
+        @test cc == 1
+        @test array == 2
+        @test channel == 62
+        pth = ExperimentDataTools.get_cell_path(cellname, _config)
+        @test pth == "array02/channel062/cell01"
+    end
 end
+
 
 test_highpass()
 test_reorganising_sessions()
-test_level_functions()

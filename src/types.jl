@@ -1,5 +1,4 @@
-abstract type NPTData end
-abstract type RawData <: NPTData end
+abstract type RawData <: DPHData end
 
 import Base.zero, Base.hcat, Base.append!
 
@@ -30,19 +29,19 @@ function Trials()
     return trials
 end
 
-struct OldTrials <: NPTData
+struct OldTrials <: DPHData
     data::Vector{Stimulus.Trial}
     setid::AbstractVector{Int64}
 end
-level(::Type{OldTrials}) = "session"
-filename(::Type{OldTrials}) = "event_data.mat"
+DataProcessingHierarchyTools.level(::Type{OldTrials}) = "session"
+DataProcessingHierarchyTools.filename(::Type{OldTrials}) = "event_data.mat"
 
 function OldTrials()
     trials = Stimulus.loadTrialInfo("event_data.mat")
     OldTrials(trials, fill(1, length(trials)))
 end
 
-struct BroadbandData <: NPTData end
+struct BroadbandData <: DPHData end
 level(::Type{BroadbandData}) = "day"
 
 function BroadbandData()
@@ -72,7 +71,8 @@ mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
 end
 
 filename(X::HighpassData) = "highpass.mat"
-filename(::Type{HighpassData}) = "highpass.mat"
+DPHT.filename(::Type{HighpassData}) = "highpass.mat"
+DPHT.level(::Type{HighpassData}) = "channel"
 matname(X::HighpassData) = "highpassdata"
 matname(::Type{HighpassData}) = "highpassdata"
 
@@ -97,6 +97,35 @@ function HighpassData()
         hh = zero(HighpassData)
     end
     hh
+end
+
+mutable struct RippleHighpassData{T1 <:Real}  <: RawData
+    data::Vector{T1}
+    channel::Int64
+    sampling_rate::Float64
+    low_freq::Float64
+    high_freq::Float64
+end
+
+DPHT.filename(::Type{RippleHighpassData}) = "rplhighpass.mat"
+DPHT.level(::Type{RippleHighpassData}) = "channel"
+
+function RippleHighpassData()
+    fname = filename(RippleHighpassData)
+    HDF5.h5open(fname,"r") do ff
+        datapath = "rh/data/analogData"
+        if ismmappable(ff[datapath])
+            data = readmmap(ff[datapath])
+        else
+            data = read(ff, datapath)
+        end
+        b1,b2 = splitdir(pwd())
+        channel = parse(Int64, filter(isdigit,b2))
+        sampling_rate = read(ff, "rh/data/analogInfo/SampleRate")[1]
+        low_freq = read(ff["rh/data/analogInfo"]["HighFreqCorner"])[1]/1000
+        high_freq = read(ff["rh/data/analogInfo"]["LowFreqCorner"])[1]/1000
+        RippleHighpassData(data[ :, 1],channel, sampling_rate, low_freq, high_freq)
+    end
 end
 
 mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
@@ -244,9 +273,16 @@ function LowpassData()
     return zero(LowpassData)
 end
 
-function load(::Type{T}, args...) where T <: NPTData
-    dir = process_level(T)
-    qq = cd(dir) do
-        qq = T(args...)
+struct ChannelConfig <: DPHT.DPHData
+    config::Dict{String, UnitRange{Int64}}
+end
+
+DPHT.level(::Type{ChannelConfig}) = "subject"
+DPHT.filename(::Type{ChannelConfig}) = "channel_config.csv"
+
+function ChannelConfig()
+    _config = cd(DPHT.process_level(level(ChannelConfig))) do
+        ExperimentDataTools.channel_config(filename(ChannelConfig))
     end
+    ChannelConfig(_config)
 end
