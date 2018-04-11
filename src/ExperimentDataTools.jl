@@ -258,8 +258,37 @@ function process_old_data(channels::AbstractVector{Int64}=Int64[])
     end
 end
 
-function process_old_data()
-    files = glob("*highpass.*")
+"""
+Convert the highpass data for `session` from chunks containing all channels, to single channel highpas files
+"""
+function tranpose_session(session::String)
+    session_dir = Spiketrains.expand_session(session)
+    dst = "$(homedir())/Documents/research/monkey/newWorkingMemory"
+    mkpath("$(dst)/$(session_dir)/session01")
+    dst = joinpath(dst, session_dir, "session01/")
+    _path = "/opt/data2/workingMemory/$(session_dir)/highpass"
+    if !ispath(_path)
+        _path = "/opt/data2/workingMemory2/$(session_dir)/highpass"
+    end
+    if ispath(_path)
+        cd(dst) do
+            if !ispath(joinpath("highpass"))
+                files = glob("*highpass.*", _path)
+                sort!(files)
+                mkdir("highpass")
+                @showprogress 1.0 "Copying files..." for f in files
+                    bn,fn = splitdir(f)
+                    Base.Filesystem.sendfile(f, "highpass/$fn")
+                end
+            end
+            process_old_data()
+            run(`git annex add array*/channel*/highpass.mat`)
+            run(`git commit -m "Adds highpass data for $(session)"`)
+            rm("highpass", recursive=true)
+        end
+    else
+        error("Session $(session) does not exist")
+    end
 end
 
 end#module
