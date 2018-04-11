@@ -6,27 +6,26 @@ struct Trials <: DPHT.DPHData end
 DPHT.level(::Type{Trials}) = "session"
 DPHT.filename(::Type{Trials}) = "event_markers.csv"
 
-function Trials()
-    ndir = DPHT.process_level(Trials)
-    trials = cd(ndir) do
-        fname = filename(Trials)
-        if isfile(fname)
-            _ddf = readtable(fname;eltypes=[String, Float64])
-            words = Array(_ddf[:words])
-            timestamps = Array(_ddf[:timestamps])
-            trials = parse(Stimulus.NewTrial, words, timestamps)
+function DPHT.load(::Type{Trials}, fname=DPHT.filename(Trials))
+    if isfile(fname)
+        _ddf = readtable(fname;eltypes=[String, Float64])
+        words = Array(_ddf[:words])
+        timestamps = Array(_ddf[:timestamps])
+        trials = parse(Stimulus.NewTrial, words, timestamps)
+    else
+        #look for an nev file
+        fname = convert(String, (first(split(readchomp(`find . -name "*nev"`),'\n'))))
+        if !isempty(fname)
+            trials = parse(Stimulus.NewTrial, File(format"NSHR", fname))
         else
-            #look for an nev file
-            fname = convert(String, (first(split(readchomp(`find . -name "*nev"`),'\n'))))
-            if !isempty(fname)
-                trials = parse(Stimulus.NewTrial, File(format"NSHR", fname))
-            else
-                trials = NewTrial[]
-            end
+            trials = NewTrial[]
         end
-        trials
     end
-    return trials
+    trials
+end
+
+function Trials()
+    DPHT.load(Trials)
 end
 
 struct OldTrials <: DPHData
