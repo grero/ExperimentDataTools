@@ -1,5 +1,6 @@
 module ExperimentDataTools
 using ProgressMeter
+using SpikeExtraction
 using SpikeSorter
 using Eyelink
 using Stimulus
@@ -27,8 +28,9 @@ include("sessions.jl")
 include("behaviour.jl")
 include("spiketrains.jl")
 include("spikesorting.jl")
+include("multunit.jl")
 
-export HighpassData, LowpassData, OldTrials, ChannelConfig
+export HighpassData, LowpassData, OldTrials, ChannelConfig, MultiUnit
 
 """
 Get the spike times from `wf` that falls witin the session boundaries of `eyelinkdata`.
