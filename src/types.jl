@@ -99,6 +99,35 @@ function HighpassData()
     hh
 end
 
+mutable struct RippleHighpassData{T1 <:Real}  <: RawData
+    data::Vector{T1}
+    channel::Int64
+    sampling_rate::Float64
+    low_freq::Float64
+    high_freq::Float64
+end
+
+DPHT.filename(::Type{RippleHighpassData}) = "rplhighpass.mat"
+DPHT.level(::Type{RippleHighpassData}) = "channel"
+
+function RippleHighpassData()
+    fname = filename(RippleHighpassData)
+    HDF5.h5open(fname,"r") do ff
+        datapath = "rh/data/analogData"
+        if ismmappable(ff[datapath])
+            data = readmmap(ff[datapath])
+        else
+            data = read(ff, datapath)
+        end
+        b1,b2 = splitdir(pwd())
+        channel = parse(Int64, filter(isdigit,b2))
+        sampling_rate = read(ff, "rh/data/analogInfo/SampleRate")[1]
+        low_freq = read(ff["rh/data/analogInfo"]["HighFreqCorner"])[1]/1000
+        high_freq = read(ff["rh/data/analogInfo"]["LowFreqCorner"])[1]/1000
+        RippleHighpassData(data[ :, 1],channel, sampling_rate, low_freq, high_freq)
+    end
+end
+
 mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
     data::Array{T1,1}
     channel::Int64
