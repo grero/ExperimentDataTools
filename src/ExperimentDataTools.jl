@@ -233,16 +233,15 @@ end
 """
 Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file. 
 """
-function process_old_data(channels::AbstractVector{Int64})
+function process_old_data(channels::AbstractVector{Int64}=Int64[])
     files = glob("highpass/*highpass.*")
     sort!(files)
     data = LegacyFileReaders.load(File(format"NPTD", files[1]))
-    sampling_rate = data.header.samplingrate
-    if data.header.transpose
-        nchannels = size(data.data,2)
-    else
-        nchannels = size(data.data,1)
+    nchannels = Int64(data.header.nchannels)
+    if isempty(channels)
+        channels = 1:nchannels
     end
+    sampling_rate = data.header.samplingrate
     filter_coefs = digitalfilter(Bandpass(250.0, 10000.0;fs=sampling_rate),Butterworth(4))
     @showprogress 1 "Processing channels..." for ch in intersect(channels,1:nchannels)
         hdata = Array{eltype(data.data),1}(0)
