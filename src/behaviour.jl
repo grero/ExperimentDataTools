@@ -1,4 +1,4 @@
-struct ExpResults <: NPTData
+struct ExpResults <: DPHT.DPHData
     data::DataFrame
     setid::AbstractVector{Int64}
 end
@@ -26,7 +26,7 @@ function ExpResults()
     return ExpResults()
 end
 
-struct EyeTrials <: NPTData
+struct EyeTrials <: DPHT.DPHData
     data::Vector{Stimulus.EyeTraceTrial}
     setid::Vector{Int64}
 end
