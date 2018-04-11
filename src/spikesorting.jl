@@ -1,6 +1,6 @@
-struct Spiketrains end
+struct NewSpiketrains end
 
-level(::Type{Spiketrains}) = "cell"
+level(::Type{NewSpiketrains}) = "cell"
 
 abstract type AbstractSortedSpikes end
 
