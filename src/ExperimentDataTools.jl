@@ -1,11 +1,12 @@
 module ExperimentDataTools
 using ProgressMeter
-using SpikeSorter
 using Eyelink
 using Stimulus
 using FileIO
 using MAT
 using DataFrames
+using SpikeSorter
+using Spiketrains
 using DSP
 using LFPTools
 using RippleTools
