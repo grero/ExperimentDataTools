@@ -7,7 +7,7 @@ DataProcessingHierarchyTools.level(::Type{Trials}) = "session"
 DataProcessingHierarchyTools.filename(::Type{Trials}) = "event_markers.csv"
 
 function Trials()
-    ndir = process_level(Trials)
+    ndir = DPHT.process_level(Trials)
     trials = cd(ndir) do
         fname = filename(Trials)
         if isfile(fname)
