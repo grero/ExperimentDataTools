@@ -2,9 +2,9 @@ abstract type RawData <: DPHData end
 
 import Base.zero, Base.hcat, Base.append!
 
-struct Trials end
-DataProcessingHierarchyTools.level(::Type{Trials}) = "session"
-DataProcessingHierarchyTools.filename(::Type{Trials}) = "event_markers.csv"
+struct Trials <: DPHT.DPHData end
+DPHT.level(::Type{Trials}) = "session"
+DPHT.filename(::Type{Trials}) = "event_markers.csv"
 
 function Trials()
     ndir = DPHT.process_level(Trials)
@@ -224,20 +224,31 @@ function load_data(::Type{T}, fname::String) where T <: RawData
             readbuf = IOBuffer(reinterpret(UInt8, _fn[:]))
             fn = String(read(readbuf))
             fn = replace(fn, "\0","")
-            fo = read(ff, "highpassdata/data/filter_order")[1]
+            fo = Int64(read(ff, "highpassdata/data/filter_order")[1])
             bb = read(ff, "highpassdata/data/filter_coefs")
             low_freq = read(ff, "highpassdata/data/low_freq")[1]
             high_freq = read(ff, "highpassdata/data/high_freq")[1]
-            channel = read(ff, "highpassdata/data/channel")[1]
+            channel = Int64(read(ff, "highpassdata/data/channel")[1])
             sampling_rate = read(ff, "highpassdata/data/sampling_rate")[1]
             bb["k"] = bb["k"][1]
-            bb["z"] = [r.data[1] + r.data[2]*1im for r in bb["z"]]
-            bb["p"] = [r.data[1] + r.data[2]*1im for r in bb["p"]]
+            bb["p"] = bb["p"][:]
+            bb["z"] = bb["z"][:]
+            if !(eltype(bb["z"]) <: Float64)
+                bb["z"] = [r.data[1] + r.data[2]*1im for r in bb["z"]]
+            end
+            if !(eltype(bb["p"]) <: Float64)
+                bb["p"] = [r.data[1] + r.data[2]*1im for r in bb["p"]]
+            end
             _filter = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
-            if ismmappable(ff["highpassdata/data/data"])
-                _data = readmmap(ff["highpassdata/data/data"])
+            data_path = ff["highpassdata/data/data"]
+            if ismmappable(data_path)
+                _data = readmmap(data_path)
             else
-                _data = read(ff,"highpassdata/data/data")
+                if ndims(data_path) == 2
+                    _data = data_path[:,1][:]
+                else
+                    _data = read(data_path)
+                end
             end
             T(_data,channel, sampling_rate, _filter, fn, fo, low_freq, high_freq )
         end

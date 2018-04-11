@@ -8,6 +8,7 @@ using Stimulus
 using FileIO
 using MAT
 using DataFrames
+using Spiketrains
 using DSP
 using LFPTools
 using RippleTools
@@ -28,7 +29,7 @@ include("types.jl")
 include("utils.jl")
 include("sessions.jl")
 include("behaviour.jl")
-include("spiketrains.jl")
+#include("spiketrains.jl")
 include("spikesorting.jl")
 include("multunit.jl")
 
@@ -235,18 +236,17 @@ function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
 end
 
 """
-Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored int eh same file.
+Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored in the same file.
 """
-function process_old_data(channels::AbstractVector{Int64})
+function process_old_data(channels::AbstractVector{Int64}=Int64[])
     files = glob("highpass/*highpass.*")
     sort!(files)
     data = LegacyFileReaders.load(File(format"NPTD", files[1]))
-    sampling_rate = data.header.samplingrate
-    if data.header.transpose
-        nchannels = size(data.data,2)
-    else
-        nchannels = size(data.data,1)
+    nchannels = Int64(data.header.nchannels)
+    if isempty(channels)
+        channels = 1:nchannels
     end
+    sampling_rate = data.header.samplingrate
     filter_coefs = digitalfilter(Bandpass(250.0, 10000.0;fs=sampling_rate),Butterworth(4))
     @showprogress 1 "Processing channels..." for ch in intersect(channels,1:nchannels)
         hdata = Array{eltype(data.data),1}(0)
@@ -263,8 +263,37 @@ function process_old_data(channels::AbstractVector{Int64})
     end
 end
 
-function process_old_data()
-    files = glob("*highpass.*")
+"""
+Convert the highpass data for `session` from chunks containing all channels, to single channel highpas files
+"""
+function tranpose_session(session::String)
+    session_dir = Spiketrains.expand_session(session)
+    dst = "$(homedir())/Documents/research/monkey/newWorkingMemory"
+    mkpath("$(dst)/$(session_dir)/session01")
+    dst = joinpath(dst, session_dir, "session01/")
+    _path = "/opt/data2/workingMemory/$(session_dir)/highpass"
+    if !ispath(_path)
+        _path = "/opt/data2/workingMemory2/$(session_dir)/highpass"
+    end
+    if ispath(_path)
+        cd(dst) do
+            if !ispath(joinpath("highpass"))
+                files = glob("*highpass.*", _path)
+                sort!(files)
+                mkdir("highpass")
+                @showprogress 1.0 "Copying files..." for f in files
+                    bn,fn = splitdir(f)
+                    Base.Filesystem.sendfile(f, "highpass/$fn")
+                end
+            end
+            process_old_data()
+            run(`git annex add array*/channel*/highpass.mat`)
+            run(`git commit -m "Adds highpass data for $(session)"`)
+            rm("highpass", recursive=true)
+        end
+    else
+        error("Session $(session) does not exist")
+    end
 end
 
 end#module
