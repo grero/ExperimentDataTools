@@ -11,7 +11,7 @@ function Trials()
     trials = cd(ndir) do
         fname = filename(Trials)
         if isfile(fname)
-            _ddf = readtable(fname;eltypes=[String, Float64])
+            _ddf = CSV.read(fname;types=[String, Float64])
             words = Array(_ddf[:words])
             timestamps = Array(_ddf[:timestamps])
             trials = parse(Stimulus.NewTrial, words, timestamps)
