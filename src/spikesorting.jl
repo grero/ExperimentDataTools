@@ -58,18 +58,24 @@ DPHT.datatype(::Type{SpikeTemplateArgs}) = SpikeTemplates
 
 function SpikeTemplates(args::SpikeTemplateArgs;kvs...)
     fnames = glob("spike_templates.hdf5")
+    append!(fnames, glob("*/spike_templates.hdf5"))
     if isempty(fnames)
         return SpikeTemplates()
     end
     fname = first(fnames)
     channel = parse(Int64, DPHT.get_numbers(DPHT.get_level_name(DPHT.level(SpikeTemplates))))
     HDF5.h5open(fname, "r") do ff
-        spikeshapes = read(ff, "spikeForms") 
-        cinv = read(ff, "cinv")
-        if ndims(cinv) == 1
-            cinv = cinv[:,1:1]
+        if "spikeForms" in names(ff)
+            spikeshapes = read(ff, "spikeForms") 
+            cinv = read(ff, "cinv")
+            if ndims(cinv) == 1
+                cinv = cinv[:,1:1]
+            end
+            pp = read(ff,"p") 
+            X = SpikeTemplates(spikeshapes, cinv, pp, channel,args)
+        else
+            X = SpikeTemplates()
         end
-        pp = read(ff,"p") 
-        SpikeTemplates(spikeshapes, cinv, pp, channel,args)
+        X
     end
 end
