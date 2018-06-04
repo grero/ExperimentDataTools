@@ -99,3 +99,25 @@ function EyeTrials()
     end
     EyeTrials(trials, fill(1, length(trials)))
 end
+
+function map_colors(x::Vector{Float64}, y::Vector{Float64})
+    xmax = max(maximum(x), -minimum(x))
+    ymax = max(maximum(y), -minimum(y))
+    #get the radius
+    r = sqrt(xmax^2 + ymax^2)
+    #get the angle
+    angles = zeros(x)
+    for i in 1:length(angles)
+        xi = x[i]
+        yi = y[i]
+        angles[i] = atan(yi/xi)
+        if xi > 0.0 && yi < 0.0
+            angles[i] += 2pi
+        elseif xi < 0.0 && yi > 0.0
+            angles[i] = pi/2 - angles[i]
+        elseif xi < 0.0 && yi < 0.0
+            angles[i] += pi
+        end
+    end
+    angles
+end
