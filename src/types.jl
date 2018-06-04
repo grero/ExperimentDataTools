@@ -3,12 +3,12 @@ abstract type RawData <: DPHData end
 import Base.zero, Base.hcat, Base.append!
 
 struct Trials <: DPHT.DPHData end
-DPHT.level(::Type{Trials}) = "session"
+DPHT.level(::Type{Trials}) = "day"
 DPHT.filename(::Type{Trials}) = "event_markers.csv"
 
 function DPHT.load(::Type{Trials}, fname=DPHT.filename(Trials))
     if isfile(fname)
-        _ddf = readtable(fname;eltypes=[String, Float64])
+        _ddf = CSV.read(fname;types=[String, Float64])
         words = Array(_ddf[:words])
         timestamps = Array(_ddf[:timestamps])
         trials = parse(Stimulus.NewTrial, words, timestamps)
@@ -285,3 +285,25 @@ function ChannelConfig()
     end
     ChannelConfig(_config)
 end
+
+struct ExperimentSettingsArgs <: DPHT.DPHDataArgs
+end
+
+struct ExperimentSettings <: DPHT.DPHData
+    settings::Dict{String, Any}
+    args::ExperimentSettingsArgs
+end
+
+DPHT.level(::Type{ExperimentSettings}) = "session"
+DPHT.filename(::Type{ExperimentSettings}) = "settings.txt"
+
+function ExperimentSettings(args::ExperimentSettingsArgs)
+    files = glob("*_settings.txt")
+    if isempty(files)
+        error("No settings files found")
+    end
+    settings = JSON.parsefile(files[1])
+    ExperimentSettings(settings, args)
+end
+
+get_screen_size(settings::ExperimentSettings) = (settings.settings["screen_width"], settings.settings["screen_height"])
