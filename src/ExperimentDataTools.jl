@@ -1,7 +1,6 @@
 module ExperimentDataTools
 using ProgressMeter
 using SpikeExtraction
-using SpikeSorter
 using HMMSpikeSorter
 using Eyelink
 using Stimulus
