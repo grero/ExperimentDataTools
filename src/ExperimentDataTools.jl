@@ -23,6 +23,7 @@ import LFPTools.align_lfp
 using DataProcessingHierarchyTools
 const DPHT = DataProcessingHierarchyTools
 import DataProcessingHierarchyTools: filename, level
+using JSON
 
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
