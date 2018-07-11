@@ -3,6 +3,8 @@ abstract type RawData <: DPHData end
 import Base.zero, Base.hcat, Base.append!
 
 struct Trials <: DPHT.DPHData end
+struct TrialsArgs <: DPHT.DPHDataArgs end
+
 DPHT.level(::Type{Trials}) = "day"
 DPHT.filename(::Type{Trials}) = "event_markers.csv"
 
@@ -28,7 +30,7 @@ function Trials()
     DPHT.load(Trials)
 end
 
-struct OldTrials <: DPHData
+struct OldTrials <: DataProcessingHierarchyTools.DPHData
     data::Vector{Stimulus.Trial}
     setid::AbstractVector{Int64}
 end
