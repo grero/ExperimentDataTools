@@ -1,0 +1,10 @@
+before_script:
+    - julia build_script.jl
+
+default:
+    script:
+        - julia -e "Pkg.test(\"ExperimentDataTools\"; coverage=true)"
+        - julia coverage_script.jl
+
+    tags:
+        - julia
