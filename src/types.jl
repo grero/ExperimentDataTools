@@ -60,11 +60,11 @@ function BroadbandData()
     end
 end
 
-mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
+mutable struct HighpassData{T1<:Real, T2<:Real, T3 <: DSP.FilterCoefficients} <: RawData
     data::Array{T1,1}
     channel::Int64
     sampling_rate::T2
-    filter_coefs::FilterCoefficients
+    filter_coefs::T3
     filter_name::String
     filter_order::Int64
     low_freq::Float64
