@@ -3,7 +3,9 @@ abstract type RawData <: DPHData end
 import Base.zero, Base.hcat, Base.append!
 
 struct Trials <: DPHT.DPHData end
-DPHT.level(::Type{Trials}) = "session"
+struct TrialsArgs <: DPHT.DPHDataArgs end
+
+DPHT.level(::Type{Trials}) = "day"
 DPHT.filename(::Type{Trials}) = "event_markers.csv"
 
 function DPHT.load(::Type{Trials}, fname=DPHT.filename(Trials))
@@ -28,7 +30,7 @@ function Trials()
     DPHT.load(Trials)
 end
 
-struct OldTrials <: DPHData
+struct OldTrials <: DataProcessingHierarchyTools.DPHData
     data::Vector{Stimulus.Trial}
     setid::AbstractVector{Int64}
 end
@@ -58,11 +60,11 @@ function BroadbandData()
     end
 end
 
-mutable struct HighpassData{T1<:Real, T2<:Real} <: RawData
+mutable struct HighpassData{T1<:Real, T2<:Real, T3 <: DSP.FilterCoefficients} <: RawData
     data::Array{T1,1}
     channel::Int64
     sampling_rate::T2
-    filter_coefs::FilterCoefficients
+    filter_coefs::T3
     filter_name::String
     filter_order::Int64
     low_freq::Float64
@@ -216,19 +218,24 @@ function save_data(X::T, session::String) where T <: RawData
 end
 
 function load_data(::Type{T}, fname::String) where T <: RawData
+    if T <: LowpassData
+        _pth = "lowpassdata"
+    else
+        _pth = "highpassdata"
+    end
     if ishdf5(fname)
         X = h5open(fname,"r") do ff
-            _fn = read(ff, "highpassdata/data/filter_name")
+            _fn = read(ff, "$(_pth)/data/filter_name")
             #convoluted way of reading a string from hdf5
             readbuf = IOBuffer(reinterpret(UInt8, _fn[:]))
             fn = String(read(readbuf))
             fn = replace(fn, "\0","")
-            fo = Int64(read(ff, "highpassdata/data/filter_order")[1])
-            bb = read(ff, "highpassdata/data/filter_coefs")
-            low_freq = read(ff, "highpassdata/data/low_freq")[1]
-            high_freq = read(ff, "highpassdata/data/high_freq")[1]
-            channel = Int64(read(ff, "highpassdata/data/channel")[1])
-            sampling_rate = read(ff, "highpassdata/data/sampling_rate")[1]
+            fo = Int64(read(ff, "$(_pth)/data/filter_order")[1])
+            bb = read(ff, "$(_pth)/data/filter_coefs")
+            low_freq = read(ff, "$(_pth)/data/low_freq")[1]
+            high_freq = read(ff, "$(_pth)/data/high_freq")[1]
+            channel = Int64(read(ff, "$(_pth)/data/channel")[1])
+            sampling_rate = read(ff, "$(_pth)/data/sampling_rate")[1]
             bb["k"] = bb["k"][1]
             bb["p"] = bb["p"][:]
             bb["z"] = bb["z"][:]
@@ -239,7 +246,7 @@ function load_data(::Type{T}, fname::String) where T <: RawData
                 bb["p"] = [r.data[1] + r.data[2]*1im for r in bb["p"]]
             end
             _filter = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
-            data_path = ff["highpassdata/data/data"]
+            data_path = ff["$(_pth)/data/data"]
             if ismmappable(data_path)
                 _data = readmmap(data_path)
             else
@@ -285,3 +292,25 @@ function ChannelConfig()
     end
     ChannelConfig(_config)
 end
+
+struct ExperimentSettingsArgs <: DPHT.DPHDataArgs
+end
+
+struct ExperimentSettings <: DPHT.DPHData
+    settings::Dict{String, Any}
+    args::ExperimentSettingsArgs
+end
+
+DPHT.level(::Type{ExperimentSettings}) = "session"
+DPHT.filename(::Type{ExperimentSettings}) = "settings.txt"
+
+function ExperimentSettings(args::ExperimentSettingsArgs)
+    files = glob("*_settings.txt")
+    if isempty(files)
+        error("No settings files found")
+    end
+    settings = JSON.parsefile(files[1])
+    ExperimentSettings(settings, args)
+end
+
+get_screen_size(settings::ExperimentSettings) = (settings.settings["screen_width"], settings.settings["screen_height"])

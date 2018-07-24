@@ -17,8 +17,8 @@ function channel_config(fname::String)
 	dd = CSV.read(fname)
     Q = Dict{String, UnitRange{Int64}}()
     for rr in CSV.eachrow(dd)
-        v = parse(UnitRange{Int64}, convert(String,rr[:channels].value))
-        k = convert(String, rr[:area].value)
+        v = parse(UnitRange{Int64}, rr[:channels])
+        k = rr[:area]
         Q[k] = v
     end
     return Q

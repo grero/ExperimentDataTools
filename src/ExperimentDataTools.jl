@@ -1,7 +1,6 @@
 module ExperimentDataTools
 using ProgressMeter
 using SpikeExtraction
-using SpikeSorter
 using HMMSpikeSorter
 using Eyelink
 using Stimulus
@@ -23,6 +22,7 @@ import LFPTools.align_lfp
 using DataProcessingHierarchyTools
 const DPHT = DataProcessingHierarchyTools
 import DataProcessingHierarchyTools: filename, level
+using JSON
 
 include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
@@ -193,45 +193,66 @@ function get_session_starts()
     session_start
 end
 
-function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000)
+function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000;kvs...)
     #get the trial structure
     session_start = get_session_starts()
     _dd, bn = splitdir(rfile.filename)
     if isempty(_dd)
         _dd = "."
     end
-    session_name, ~ = splitext(bn)
-    println("Processing data...")
-    open(rfile.filename, "r") do ff
-        dd = RippleTools.DataPacket(ff)
-        @showprogress 1 "Processing channels... " for ch in channels
-            #separate into sessions
-            idx1 = 1
-            sessions = collect(keys(session_start))
-            sort!(sessions)
-            for session in sessions
-                session_name = @sprintf "session%02d" session
-                _start = max(session_start[session],1.0)
-                _end = get(session_start, session+1, size(dd.data,2)/fs)
-                idx1 = round(Int64, _start*fs)
-                idx2 = round(Int64, _end*fs)
-                # lowpass data
-                filepath = "$(getpath(session_name, ch))/$(filename(LowpassData))"
-                if !isfile(filepath)
-                    ldata,ff = LFPTools.lowpass_filter(float(dd.data[ch,idx1:idx2]),0.1, 250.0,fs)
-                    lldata = LowpassData(ldata, ch, 1000.0, ff, "Butterworth", 4, 0.1, 250.0)
-                    save_data(lldata, session_name)
-                end
-                filepath = "$(getpath(session_name, ch))/$(filename(HighpassData))"
-                if !isfile(filepath)
-                # highpass data
-                    hdata, ffh = LFPTools.bandpass_filter(float(dd.data[ch, idx1:idx2]), 300.0, 10_000.0)
-                    hhdata = HighpassData(hdata, ch, fs, ffh, "Butterworth", 4, 300.0, 10_000.0)
-                    save_data(hhdata, session_name)
-                end
+    rawdata,pth = process_rawdata2(rfile;kvs...)
+    process_rawdata(rawdata, session_start, channels, fs)
+    rm(pth)
+end
+
+function process_rawdata(rawdata::AbstractMatrix{Int16}, session_start, channels=1:128, fs=30_000)
+    @showprogress 1 "Processing channels... " for ch in channels
+        #separate into sessions
+        idx1 = 1
+        sessions = collect(keys(session_start))
+        sort!(sessions)
+        for session in sessions
+            session_name = @sprintf "session%02d" session
+            _start = max(session_start[session],1.0)
+            _end = get(session_start, session+1, size(rawdata,1)/fs)
+            idx1 = round(Int64, _start*fs)
+            idx2 = round(Int64, _end*fs)
+            # lowpass data
+            filepath = "$(getpath(session_name, ch))/$(filename(LowpassData))"
+            _data = float(rawdata[idx1:idx2,ch])
+            if !isfile(filepath)
+                ldata,ff = LFPTools.lowpass_filter(_data,0.1, 250.0,fs)
+                lldata = LowpassData(ldata, ch, 1000.0, ff, "Butterworth", 4, 0.1, 250.0)
+                save_data(lldata, session_name)
+            end
+            filepath = "$(getpath(session_name, ch))/$(filename(HighpassData))"
+            if !isfile(filepath)
+            # highpass data
+                hdata, ffh = LFPTools.bandpass_filter(_data, 300.0, 10_000.0)
+                hhdata = HighpassData(hdata, ch, fs, ffh, "Butterworth", 4, 300.0, 10_000.0)
+                save_data(hhdata, session_name)
             end
         end
     end
+end
+
+"""
+Tranposes the data in the neuroshare file `rfile` and returns an mmap of the resulting data
+"""
+function process_rawdata2(rfile::File{format"NSHR"}, channels=1:128, fs=30_000;tdir=tempdir())
+    pth,fid = mktemp(tdir)
+    rawdata = open(rfile.filename, "r") do ff
+        dd = RippleTools.DataPacket(ff)
+        npoints = size(dd.data,2)
+        nchannels = size(dd.data,1)
+        rawdata = Mmap.mmap(fid, Array{Int16,2},(npoints,nchannels))
+        @showprogress 1.0 "Transposing data" for i in 1:npoints
+            rawdata[i,:] = dd.data[:,i]
+        end
+        rawdata
+    end
+    close(fid)
+    rawdata, pth
 end
 
 """
