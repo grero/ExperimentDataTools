@@ -54,7 +54,6 @@ function test_highpass()
     H = HighpassData(X, 1, 40_000.0, 300.0, Butterworth, 4)
     ExperimentDataTools.save_data(H, "session01")
     H2 = cd("session01/array01/channel001") do
-        @show pwd()
         ExperimentDataTools.HighpassData()
     end
     #cleanup
