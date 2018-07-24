@@ -218,19 +218,24 @@ function save_data(X::T, session::String) where T <: RawData
 end
 
 function load_data(::Type{T}, fname::String) where T <: RawData
+    if T <: LowpassData
+        _pth = "lowpassdata"
+    else
+        _pth = "highpassdata"
+    end
     if ishdf5(fname)
         X = h5open(fname,"r") do ff
-            _fn = read(ff, "highpassdata/data/filter_name")
+            _fn = read(ff, "$(_pth)/data/filter_name")
             #convoluted way of reading a string from hdf5
             readbuf = IOBuffer(reinterpret(UInt8, _fn[:]))
             fn = String(read(readbuf))
             fn = replace(fn, "\0","")
-            fo = Int64(read(ff, "highpassdata/data/filter_order")[1])
-            bb = read(ff, "highpassdata/data/filter_coefs")
-            low_freq = read(ff, "highpassdata/data/low_freq")[1]
-            high_freq = read(ff, "highpassdata/data/high_freq")[1]
-            channel = Int64(read(ff, "highpassdata/data/channel")[1])
-            sampling_rate = read(ff, "highpassdata/data/sampling_rate")[1]
+            fo = Int64(read(ff, "$(_pth)/data/filter_order")[1])
+            bb = read(ff, "$(_pth)/data/filter_coefs")
+            low_freq = read(ff, "$(_pth)/data/low_freq")[1]
+            high_freq = read(ff, "$(_pth)/data/high_freq")[1]
+            channel = Int64(read(ff, "$(_pth)/data/channel")[1])
+            sampling_rate = read(ff, "$(_pth)/data/sampling_rate")[1]
             bb["k"] = bb["k"][1]
             bb["p"] = bb["p"][:]
             bb["z"] = bb["z"][:]
@@ -241,7 +246,7 @@ function load_data(::Type{T}, fname::String) where T <: RawData
                 bb["p"] = [r.data[1] + r.data[2]*1im for r in bb["p"]]
             end
             _filter = ZeroPoleGain(bb["z"], bb["p"], bb["k"])
-            data_path = ff["highpassdata/data/data"]
+            data_path = ff["$(_pth)/data/data"]
             if ismmappable(data_path)
                 _data = readmmap(data_path)
             else

@@ -161,8 +161,7 @@ function get_triggers(rfile::File{format"NSHR"})
         words = Array(_ddf[:words])
         timestamps = Array(_ddf[:timestamps])
     else
-        strobes, timestamps = RippleTools.extract_markers(rfile.filename)
-        words = RippleTools.parse_strobe.(strobes)
+        words, timestamps = RippleTools.extract_markers(rfile.filename)
         writetable(marker_file, DataFrame(words=words, timestamps=timestamps))
     end
     words, timestamps
@@ -178,7 +177,7 @@ function get_session_starts()
     fname = filename(Trials)
     session_start = Dict()
     if isfile(fname)
-        _ddf = readtable(fname;eltypes=[String, Float64])
+        _ddf = CSV.read(fname;types=[String, Float64])
         for r in eachrow(_ddf)
             w = r[:words]
             if w[1:2] == "11"
