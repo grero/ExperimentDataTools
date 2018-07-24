@@ -32,6 +32,7 @@ include("behaviour.jl")
 #include("spiketrains.jl")
 include("spikesorting.jl")
 include("multunit.jl")
+include("remote_sort.jl")
 
 export HighpassData, LowpassData, OldTrials, ChannelConfig, MultiUnit
 
