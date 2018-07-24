@@ -257,7 +257,7 @@ function process_old_data(channels::AbstractVector{Int64}=Int64[])
                 append!(hdata, data.data[ch,:])
             end
         end
-        H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0) 
+        H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0)
         save_data(H, ".")
     end
 end
