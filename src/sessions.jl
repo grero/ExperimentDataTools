@@ -52,7 +52,7 @@ Re-organize the current directory by moving session related files to their dedic
 w7_11_1.edf -> session01/w7_11_1.edf
 If files are under revision control, use git mv instead and opens the default editor asking for a commit message.
 """
-function process(;commit_message="")
+function process(;commit_message="Reorganizes hierarchy")
     repo = discover_repo(pwd())
     repo_path = LibGit2.path(repo)*"/"
     files = split(chomp(readstring(`find . -name "*_settings.txt" -maxdepth 1`)))
