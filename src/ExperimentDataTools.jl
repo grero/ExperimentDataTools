@@ -161,8 +161,7 @@ function get_triggers(rfile::File{format"NSHR"})
         words = Array(_ddf[:words])
         timestamps = Array(_ddf[:timestamps])
     else
-        strobes, timestamps = RippleTools.extract_markers(rfile.filename)
-        words = RippleTools.parse_strobe.(strobes)
+        words, timestamps = RippleTools.extract_markers(rfile.filename)
         writetable(marker_file, DataFrame(words=words, timestamps=timestamps))
     end
     words, timestamps
