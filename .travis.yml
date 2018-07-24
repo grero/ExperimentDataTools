@@ -3,6 +3,6 @@ julia:
       - release
       - nightly
 before_script:
-  - julia -e 'Pkg.clone("https://github.com/grero/SpikeSorter.jl.git")'
+  - julia -e 'Pkg.clone("https://github.com/grero/ExperimentDataTools.jl.git")'
 after_success:
       - julia -e 'cd(Pkg.dir("ExperimentDataTools")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
