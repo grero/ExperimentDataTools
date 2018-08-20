@@ -18,7 +18,7 @@ function DPHT.load(::Type{Trials}, fname=DPHT.filename(Trials))
         #look for an nev file
         fname = convert(String, (first(split(readchomp(`find . -name "*nev"`),'\n'))))
         if !isempty(fname)
-            trials = parse(Stimulus.NewTrial, File(format"NSHR", fname))
+            trials = parse(Stimulus.NewTrial, File(format"NSX", fname))
         else
             trials = NewTrial[]
         end
