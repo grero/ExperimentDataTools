@@ -1,4 +1,5 @@
 module ExperimentDataTools
+using ExperimentDataToolsBase
 using ProgressMeter
 using SpikeSorter
 using HMMSpikeSorter
@@ -62,8 +63,8 @@ function get_markers()
     return markers, Array(dframe[:timestamps])
 end
 
-function get_session_markers(pl2_file::String)
-    markers, marker_timestamps = PlexonTools.extract_markers(pl2_file)
+function get_session_markers(pl2_file::File{format"PL2"})
+    markers, marker_timestamps = extract_markers(pl2_file)
     get_session_markers(markers, marker_timestamps)
 end
 
@@ -83,7 +84,7 @@ function get_session_markers(markers, marker_timestamps)
 end
 
 function get_session_spiketimes(wf::SpikeWaveforms, cwd=pwd())
-    markers, marker_timestamps = PlexonTools.extract_markers()
+    markers, marker_timestamps = extract_markers()
     get_session_spiketimes(wf, markers, marker_timestamps)
 end
 
