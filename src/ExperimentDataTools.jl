@@ -197,6 +197,9 @@ end
 function process_rawdata(rfile::File{format"NSX"}, channels=1:128, fs=30_000;kvs...)
     #get the trial structure
     session_start = get_session_starts()
+    if isempty(session_start)
+        error("No session starts found")
+    end
     _dd, bn = splitdir(rfile.filename)
     if isempty(_dd)
         _dd = "."
