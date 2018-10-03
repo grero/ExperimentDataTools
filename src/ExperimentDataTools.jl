@@ -151,7 +151,7 @@ function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
     nothing
 end
 
-function get_triggers(rfile::File{format"NSHR"})
+function get_triggers(rfile::File{format"NSX"})
     #extract triggers
     dd, bn = splitdir(rfile.filename)
     if isempty(dd)
@@ -169,7 +169,7 @@ function get_triggers(rfile::File{format"NSHR"})
     words, timestamps
 end
 
-function Base.parse(::Type{Stimulus.NewTrial}, rfile::File{format"NSHR"})
+function Base.parse(::Type{Stimulus.NewTrial}, rfile::File{format"NSX"})
     words, timestamps = get_triggers(rfile)
     trials = parse(Stimulus.NewTrial, words, timestamps)
     trials
@@ -195,7 +195,7 @@ function get_session_starts()
     session_start
 end
 
-function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000;kvs...)
+function process_rawdata(rfile::File{format"NSX"}, channels=1:128, fs=30_000;kvs...)
     #get the trial structure
     session_start = get_session_starts()
     _dd, bn = splitdir(rfile.filename)
