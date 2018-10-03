@@ -241,17 +241,13 @@ end
 """
 Tranposes the data in the neuroshare file `rfile` and returns an mmap of the resulting data
 """
-function process_rawdata2(rfile::File{format"NSHR"}, channels=1:128, fs=30_000;tdir=tempdir())
+function process_rawdata2(rfile::File{format"NSX"}, channels=1:128, fs=30_000;tdir=tempdir())
     pth,fid = mktemp(tdir)
-    rawdata = open(rfile.filename, "r") do ff
-        dd = RippleTools.DataPacket(ff)
-        npoints = size(dd.data,2)
-        nchannels = size(dd.data,1)
-        rawdata = Mmap.mmap(fid, Array{Int16,2},(npoints,nchannels))
-        @showprogress 1.0 "Transposing data" for i in 1:npoints
-            rawdata[i,:] = dd.data[:,i]
-        end
-        rawdata
+    dd = FileIO.load(rfile)
+    nchannels,npoints = size(dd.data.data)
+    rawdata = Mmap.mmap(fid, Array{Int16,2},(npoints,nchannels))
+    @showprogress 1.0 "Transposing data" for i in 1:npoints
+        rawdata[i,:] = dd.data.data[:,i]
     end
     close(fid)
     rawdata, pth
