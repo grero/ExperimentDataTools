@@ -11,7 +11,6 @@ using DataFrames
 using Spiketrains
 using DSP
 using LFPTools
-using RippleTools
 using DataFrames
 using CSV
 using Glob
@@ -163,7 +162,7 @@ function get_triggers(rfile::File{format"NSX"})
         words = Array(_ddf[:words])
         timestamps = Array(_ddf[:timestamps])
     else
-        words, timestamps = RippleTools.extract_markers(rfile.filename)
+        words, timestamps = extract_markers(rfile.filename)
         writetable(marker_file, DataFrame(words=words, timestamps=timestamps))
     end
     words, timestamps
