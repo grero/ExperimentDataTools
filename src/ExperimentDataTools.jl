@@ -2,13 +2,12 @@ module ExperimentDataTools
 using ExperimentDataToolsBase
 using ProgressMeter
 using SpikeSorter
-using HMMSpikeSorter
+using SpikeExtraction
 using Eyelink
 using Stimulus
 using FileIO
 using MAT
 using DataFrames
-using Spiketrains
 using DSP
 using LFPTools
 using DataFrames
@@ -18,21 +17,15 @@ using MAT
 using LegacyFileReaders
 using HDF5
 import Base.parse
-import LFPTools.align_lfp
 using DataProcessingHierarchyTools
 const DPHT = DataProcessingHierarchyTools
 import DataProcessingHierarchyTools: filename, level
 using JSON
 
-include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("utils.jl")
-include("sessions.jl")
-include("behaviour.jl")
-#include("spiketrains.jl")
-include("spikesorting.jl")
-include("multunit.jl")
 include("remote_sort.jl")
+include("multiunit.jl")
 
 export HighpassData, LowpassData, OldTrials, ChannelConfig, MultiUnit
 
@@ -194,9 +187,11 @@ function get_session_starts()
     session_start
 end
 
-function process_rawdata(rfile::File{format"NSX"}, channels=1:128, fs=30_000;kvs...)
+function process_rawdata(rfile::File{format"NSX"}, channels=1:128, fs=30_000;session_start=Dict(), kvs...)
     #get the trial structure
-    session_start = get_session_starts()
+    if isempty(session_start)
+        session_start = get_session_starts()
+    end
     if isempty(session_start)
         error("No session starts found")
     end
