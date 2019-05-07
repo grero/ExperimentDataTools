@@ -253,8 +253,10 @@ end
 """
 Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored in the same file.
 """
-function process_old_data(channels::AbstractVector{Int64}=Int64[])
-    files = glob("highpass/*highpass.*")
+function process_old_data(::Type{T}, channels::AbstractVector{Int64}=Int64[]) where T <: RawData
+    fname = DPHT.filename(T)
+    bname,ext = splitext(fname)
+    files = glob("$(bname)/*$(bname).*")
     sort!(files)
     data = LegacyFileReaders.load(File(format"NPTD", files[1]))
     nchannels = Int64(data.header.nchannels)
@@ -262,7 +264,7 @@ function process_old_data(channels::AbstractVector{Int64}=Int64[])
         channels = 1:nchannels
     end
     sampling_rate = data.header.samplingrate
-    filter_coefs = digitalfilter(Bandpass(250.0, 10000.0;fs=sampling_rate),Butterworth(4))
+    filter_coefs = get_filter_coefs(T)
     @showprogress 1 "Processing channels..." for ch in intersect(channels,1:nchannels)
         hdata = Array{eltype(data.data),1}(0)
         for f in files
@@ -273,7 +275,7 @@ function process_old_data(channels::AbstractVector{Int64}=Int64[])
                 append!(hdata, data.data[ch,:])
             end
         end
-        H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0)
+        H = T(hdata, ch,sampling_rate)
         save_data(H, ".")
     end
 end
