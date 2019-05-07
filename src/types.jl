@@ -18,7 +18,7 @@ function DPHT.load(::Type{Trials}, fname=DPHT.filename(Trials))
         #look for an nev file
         fname = convert(String, (first(split(readchomp(`find . -name "*nev"`),'\n'))))
         if !isempty(fname)
-            trials = parse(Stimulus.NewTrial, File(format"NSHR", fname))
+            trials = parse(Stimulus.NewTrial, File(format"NSX", fname))
         else
             trials = NewTrial[]
         end
@@ -138,6 +138,19 @@ mutable struct LowpassData{T1<:Real, T2<:Real} <: RawData
     filter_order::Int64
     low_freq::Float64
     high_freq::Float64
+end
+
+function LowpassData(data::Vector{T1}, channel::Int64, sampling_rate=1000) where T1 <: Real
+    filter_coefs = get_filter_coefs(LowpassData)
+    filter_name = "Butterworth"
+    filter_order = 4
+    low_freq = 0.1
+    high_freq = 250.0
+    LowpassData(data, channel, sampling_rate, filter_coefs, filter_name, filter_order, low_freq, high_freq)
+end
+
+function get_filter_coefs(::Type{LowpassData},fs=1000)
+    digitalfilter(Bandpass(0.1, 250.0;fs=fs), Butterworth(4))
 end
 
 function zero(::Type{LowpassData{T1, T2}}) where T1 <: Real where T2 <: Real

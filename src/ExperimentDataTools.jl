@@ -1,16 +1,15 @@
 module ExperimentDataTools
+using ExperimentDataToolsBase
 using ProgressMeter
 using SpikeSorter
-using HMMSpikeSorter
+using SpikeExtraction
 using Eyelink
 using Stimulus
 using FileIO
 using MAT
 using DataFrames
-using Spiketrains
 using DSP
 using LFPTools
-using RippleTools
 using DataFrames
 using CSV
 using Glob
@@ -18,21 +17,15 @@ using MAT
 using LegacyFileReaders
 using HDF5
 import Base.parse
-import LFPTools.align_lfp
 using DataProcessingHierarchyTools
 const DPHT = DataProcessingHierarchyTools
 import DataProcessingHierarchyTools: filename, level
 using JSON
 
-include("$(Pkg.dir("LFPTools"))/src/plots.jl")
 include("types.jl")
 include("utils.jl")
-include("sessions.jl")
-include("behaviour.jl")
-#include("spiketrains.jl")
-include("spikesorting.jl")
-include("multunit.jl")
 include("remote_sort.jl")
+include("multiunit.jl")
 
 export HighpassData, LowpassData, OldTrials, ChannelConfig, MultiUnit
 
@@ -62,8 +55,8 @@ function get_markers()
     return markers, Array(dframe[:timestamps])
 end
 
-function get_session_markers(pl2_file::String)
-    markers, marker_timestamps = PlexonTools.extract_markers(pl2_file)
+function get_session_markers(pl2_file::File{format"PL2"})
+    markers, marker_timestamps = extract_markers(pl2_file)
     get_session_markers(markers, marker_timestamps)
 end
 
@@ -83,7 +76,7 @@ function get_session_markers(markers, marker_timestamps)
 end
 
 function get_session_spiketimes(wf::SpikeWaveforms, cwd=pwd())
-    markers, marker_timestamps = PlexonTools.extract_markers()
+    markers, marker_timestamps = extract_markers()
     get_session_spiketimes(wf, markers, marker_timestamps)
 end
 
@@ -150,7 +143,7 @@ function recompute!(H::HighpassData, data::Array{Float64,1}, channel::Int64)
     nothing
 end
 
-function get_triggers(rfile::File{format"NSHR"})
+function get_triggers(rfile::File{format"NSX"})
     #extract triggers
     dd, bn = splitdir(rfile.filename)
     if isempty(dd)
@@ -162,13 +155,13 @@ function get_triggers(rfile::File{format"NSHR"})
         words = Array(_ddf[:words])
         timestamps = Array(_ddf[:timestamps])
     else
-        words, timestamps = RippleTools.extract_markers(rfile.filename)
+        words, timestamps = extract_markers(rfile.filename)
         writetable(marker_file, DataFrame(words=words, timestamps=timestamps))
     end
     words, timestamps
 end
 
-function Base.parse(::Type{Stimulus.NewTrial}, rfile::File{format"NSHR"})
+function Base.parse(::Type{Stimulus.NewTrial}, rfile::File{format"NSX"})
     words, timestamps = get_triggers(rfile)
     trials = parse(Stimulus.NewTrial, words, timestamps)
     trials
@@ -194,9 +187,14 @@ function get_session_starts()
     session_start
 end
 
-function process_rawdata(rfile::File{format"NSHR"}, channels=1:128, fs=30_000;kvs...)
+function process_rawdata(rfile::File{format"NSX"}, channels=1:128, fs=30_000;session_start=Dict(), kvs...)
     #get the trial structure
-    session_start = get_session_starts()
+    if isempty(session_start)
+        session_start = get_session_starts()
+    end
+    if isempty(session_start)
+        error("No session starts found")
+    end
     _dd, bn = splitdir(rfile.filename)
     if isempty(_dd)
         _dd = "."
@@ -240,17 +238,13 @@ end
 """
 Tranposes the data in the neuroshare file `rfile` and returns an mmap of the resulting data
 """
-function process_rawdata2(rfile::File{format"NSHR"}, channels=1:128, fs=30_000;tdir=tempdir())
+function process_rawdata2(rfile::File{format"NSX"}, channels=1:128, fs=30_000;tdir=tempdir())
     pth,fid = mktemp(tdir)
-    rawdata = open(rfile.filename, "r") do ff
-        dd = RippleTools.DataPacket(ff)
-        npoints = size(dd.data,2)
-        nchannels = size(dd.data,1)
-        rawdata = Mmap.mmap(fid, Array{Int16,2},(npoints,nchannels))
-        @showprogress 1.0 "Transposing data" for i in 1:npoints
-            rawdata[i,:] = dd.data[:,i]
-        end
-        rawdata
+    dd = FileIO.load(rfile)
+    nchannels,npoints = size(dd.data.data)
+    rawdata = Mmap.mmap(fid, Array{Int16,2},(npoints,nchannels))
+    @showprogress 1.0 "Transposing data" for i in 1:npoints
+        rawdata[i,:] = dd.data.data[:,i]
     end
     close(fid)
     rawdata, pth
@@ -259,8 +253,10 @@ end
 """
 Convert old data to the new format. Basically, old data were split into chunks, and all channels for a particular chunk was stored in the same file.
 """
-function process_old_data(channels::AbstractVector{Int64}=Int64[])
-    files = glob("highpass/*highpass.*")
+function process_old_data(::Type{T}, channels::AbstractVector{Int64}=Int64[]) where T <: RawData
+    fname = DPHT.filename(T)
+    bname,ext = splitext(fname)
+    files = glob("$(bname)/*$(bname).*")
     sort!(files)
     data = LegacyFileReaders.load(File(format"NPTD", files[1]))
     nchannels = Int64(data.header.nchannels)
@@ -268,7 +264,7 @@ function process_old_data(channels::AbstractVector{Int64}=Int64[])
         channels = 1:nchannels
     end
     sampling_rate = data.header.samplingrate
-    filter_coefs = digitalfilter(Bandpass(250.0, 10000.0;fs=sampling_rate),Butterworth(4))
+    filter_coefs = get_filter_coefs(T)
     @showprogress 1 "Processing channels..." for ch in intersect(channels,1:nchannels)
         hdata = Array{eltype(data.data),1}(0)
         for f in files
@@ -279,7 +275,7 @@ function process_old_data(channels::AbstractVector{Int64}=Int64[])
                 append!(hdata, data.data[ch,:])
             end
         end
-        H = HighpassData(hdata, ch,sampling_rate, filter_coefs, "Butterworth", 4, 250.0, 10000.0)
+        H = T(hdata, ch,sampling_rate)
         save_data(H, ".")
     end
 end

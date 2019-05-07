@@ -20,14 +20,18 @@ function transfer_data(::Type{T};remote="nus-hpc:/hpctmp/lsihr/", dryrun=false, 
     hostname,pth = split(remote, ":")
     pth = joinpath(pth, rpath)
     run(`ssh $hostname mkdir -p $pth`)
-    cmd =`rsync -ruvLR --partial --progress $ss $(files) $(joinpath(remote, rpath,""))` 
-    if dryrun
-        @show files
-        @show cmd
-        @show pth
-    end
-    run(cmd)
-    if start_sort
-        run(`ssh $hostname cd $pth; ~/programming/hmmsort/hmmsort_pbs.py ~/programming/hmmsort`)
+    for f in files
+        cmd =`rsync -ruvLR --partial --progress $ss $f $(joinpath(remote, rpath,""))`
+        if dryrun
+            @show files
+            @show cmd
+            @show pth
+        end
+        run(cmd)
+        _pth,_fname = splitdir(f)
+        _pth = joinpath(pth, _pth)
+        if start_sort
+            run(`ssh $hostname cd $_pth; ~/programming/hmmsort/hmmsort_pbs.py ~/programming/hmmsort`)
+        end
     end
 end
